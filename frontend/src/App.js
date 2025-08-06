@@ -282,7 +282,7 @@ function App() {
   }, [currentSong, isPlaying, isPaused, accessToken, deviceId, updateProgress]);
 
   // Define stopMusic function before it's used in useEffect
-  const stopMusic = async () => {
+  const stopMusic = useCallback(async () => {
     if (!accessToken || !deviceId) return;
     
     try {
@@ -291,7 +291,7 @@ function App() {
     } catch (error) {
       console.error('Error stopping music:', error);
     }
-  };
+  }, [accessToken, deviceId]);
 
   // Add this new useEffect to handle auto-stop
   useEffect(() => {

@@ -20,7 +20,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/frontend/build/index.html"
+      "destination": "/index.html"
     }
   ],
   "env": {
