@@ -62,42 +62,64 @@ async function findUniqueRandomSong(playlistId, filters, token, maxAttempts = 10
   // Try up to maxAttempts times to find a unique song
   while (attempts < maxAttempts) {
     attempts++;
-    console.log(`Attempt ${attempts} to find unique song...`);
+    console.log(`Attempt ${attempts} to find unique song with filters:`, filters);
     
-    // Get a random song from MongoDB database using provided filters
-    const song = await mongoService.getRandomSong(filters);
-    
-    // If no song found with current filters, break out of loop
-    if (!song) {
-      console.log('No songs found with current filters');
-      break;
-    }
-    
-    // Try to find this song on Spotify
     try {
-      // Search for the song on Spotify using multiple strategies
-      const track = await searchSpotifyTrack(song, token);
-      const trackUri = track.uri; // Extract Spotify track URI
+      // Get a random song from MongoDB database using provided filters
+      const song = await mongoService.getRandomSong(filters);
       
-      // Check if this track is already in the playlist
-      const isDuplicate = await checkPlaylistForDuplicate(playlistId, trackUri, token);
-      
-      // If track is unique (not already in playlist), return it
-      if (!isDuplicate) {
-        console.log('Found unique song:', track.name, 'by', track.artists.map(a => a.name).join(', '));
-        return { song, track }; // Return both database song and Spotify track
-      } else {
-        // If duplicate found, try another song
-        console.log('Song already exists in playlist, trying another...');
+      // If no song found with current filters, try without filters
+      if (!song) {
+        console.log('No songs found with current filters, trying without filters...');
+        if (Object.keys(filters).some(key => filters[key])) {
+          // Try without any filters
+          const songWithoutFilters = await mongoService.getRandomSong({});
+          if (songWithoutFilters) {
+            console.log('Found song without filters:', songWithoutFilters.title);
+            const track = await searchSpotifyTrack(songWithoutFilters, token);
+            const trackUri = track.uri;
+            const isDuplicate = await checkPlaylistForDuplicate(playlistId, trackUri, token);
+            if (!isDuplicate) {
+              return { song: songWithoutFilters, track };
+            }
+          }
+        }
+        console.log('No songs found in database at all');
+        break;
       }
-    } catch (error) {
-      // If Spotify search failed, try another song
-      console.log('Failed to find Spotify track for:', song.title);
-      continue; // Continue to next attempt
+      
+      console.log('Found song from database:', song.title, 'by', song.artist);
+      
+      // Try to find this song on Spotify
+      try {
+        // Search for the song on Spotify using multiple strategies
+        const track = await searchSpotifyTrack(song, token);
+        const trackUri = track.uri; // Extract Spotify track URI
+        
+        // Check if this track is already in the playlist
+        const isDuplicate = await checkPlaylistForDuplicate(playlistId, trackUri, token);
+        
+        // If track is unique (not already in playlist), return it
+        if (!isDuplicate) {
+          console.log('Found unique song:', track.name, 'by', track.artists.map(a => a.name).join(', '));
+          return { song, track }; // Return both database song and Spotify track
+        } else {
+          // If duplicate found, try another song
+          console.log('Song already exists in playlist, trying another...');
+        }
+      } catch (error) {
+        // If Spotify search failed, try another song
+        console.log('Failed to find Spotify track for:', song.title, 'Error:', error.message);
+        continue; // Continue to next attempt
+      }
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      break;
     }
   }
   
   // Return null if no unique song found after all attempts
+  console.log('No unique song found after', maxAttempts, 'attempts');
   return null;
 }
 
@@ -556,75 +578,38 @@ app.post('/api/create-dynamic-playlist', async (req, res) => {
     const playlistData = await createResponse.json();
     const playlistId = playlistData.id;
     
-    // If filters are provided, add a random song from database
-    if (genre || yearFrom || yearTo) {
-      try {
-        console.log('Adding random song to new playlist with filters:', { genre, yearFrom, yearTo });
+    // Always try to add a random song, even without filters
+    try {
+      console.log('Adding random song to new playlist with filters:', { genre, yearFrom, yearTo });
+      
+      const filters = {
+        genre: genre || null,
+        yearFrom: yearFrom || null,
+        yearTo: yearTo || null
+      };
+      
+      // Find a unique random song for the playlist
+      const uniqueSongData = await findUniqueRandomSong(playlistId, filters, token, 10);
+      
+      if (uniqueSongData) {
+        const { song, track } = uniqueSongData;
+        const trackUri = track.uri;
         
-        const filters = {
-          genre: genre || null,
-          yearFrom: yearFrom || null,
-          yearTo: yearTo || null
-        };
+        // Add track to the new playlist
+        const addTrackResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            uris: [trackUri]
+          })
+        });
         
-        // Find a unique random song for the playlist
-        const uniqueSongData = await findUniqueRandomSong(playlistId, filters, token, 10);
-        
-        if (uniqueSongData) {
-          const { song, track } = uniqueSongData;
-          const trackUri = track.uri;
+        if (addTrackResponse.ok) {
+          console.log('Successfully added random song to new playlist:', track.name);
           
-          // Add track to the new playlist
-          const addTrackResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              uris: [trackUri]
-            })
-          });
-          
-          if (addTrackResponse.ok) {
-            console.log('Successfully added random song to new playlist:', track.name);
-            
-            res.json({
-              success: true,
-              playlist: {
-                id: playlistData.id,
-                name: playlistData.name,
-                description: playlistData.description,
-                uri: playlistData.uri
-              },
-              addedSong: {
-                id: track.id,
-                title: track.name,
-                artist: track.artists.map(a => a.name).join(', '),
-                album: track.album.name,
-                uri: track.uri,
-                preview_url: track.preview_url
-              },
-              originalSong: song,
-              message: 'Playlist created successfully with random song from database'
-            });
-          } else {
-            // Playlist created but failed to add song
-            console.error('Failed to add song to playlist, but playlist was created');
-            res.json({
-              success: true,
-              playlist: {
-                id: playlistData.id,
-                name: playlistData.name,
-                description: playlistData.description,
-                uri: playlistData.uri
-              },
-              message: 'Playlist created successfully (failed to add initial song)'
-            });
-          }
-        } else {
-          // Playlist created but no song found
-          console.log('No suitable song found for filters, but playlist was created');
           res.json({
             success: true,
             playlist: {
@@ -633,12 +618,140 @@ app.post('/api/create-dynamic-playlist', async (req, res) => {
               description: playlistData.description,
               uri: playlistData.uri
             },
-            message: 'Playlist created successfully (no suitable song found for filters)'
+            addedSong: {
+              id: track.id,
+              title: track.name,
+              artist: track.artists.map(a => a.name).join(', '),
+              album: track.album.name,
+              uri: track.uri,
+              preview_url: track.preview_url
+            },
+            originalSong: song,
+            message: 'Playlist created successfully with random song from database'
+          });
+        } else {
+          const errorData = await addTrackResponse.json();
+          console.error('Failed to add song to playlist:', errorData);
+          
+          // Try to add a popular song as fallback
+          const fallbackResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              uris: ['spotify:track:4iV5W9uYEdYUVa79Axb7Rh'] // "Imagine" by John Lennon as fallback
+            })
+          });
+          
+          if (fallbackResponse.ok) {
+            console.log('Added fallback song to playlist');
+            res.json({
+              success: true,
+              playlist: {
+                id: playlistData.id,
+                name: playlistData.name,
+                description: playlistData.description,
+                uri: playlistData.uri
+              },
+              message: 'Playlist created successfully with fallback song'
+            });
+          } else {
+            res.json({
+              success: true,
+              playlist: {
+                id: playlistData.id,
+                name: playlistData.name,
+                description: playlistData.description,
+                uri: playlistData.uri
+              },
+              message: 'Playlist created successfully (failed to add songs)'
+            });
+          }
+        }
+      } else {
+        // No song found from database, try fallback
+        console.log('No suitable song found for filters, trying fallback song');
+        
+        const fallbackResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            uris: ['spotify:track:4iV5W9uYEdYUVa79Axb7Rh'] // "Imagine" by John Lennon as fallback
+          })
+        });
+        
+        if (fallbackResponse.ok) {
+          console.log('Added fallback song to playlist');
+          res.json({
+            success: true,
+            playlist: {
+              id: playlistData.id,
+              name: playlistData.name,
+              description: playlistData.description,
+              uri: playlistData.uri
+            },
+            message: 'Playlist created successfully with fallback song'
+          });
+        } else {
+          res.json({
+            success: true,
+            playlist: {
+              id: playlistData.id,
+              name: playlistData.name,
+              description: playlistData.description,
+              uri: playlistData.uri
+            },
+            message: 'Playlist created successfully (no songs added)'
           });
         }
-      } catch (songError) {
-        console.error('Error adding song to new playlist:', songError);
-        // Playlist created but failed to add song
+      }
+    } catch (songError) {
+      console.error('Error adding song to new playlist:', songError);
+      
+      // Try fallback song
+      try {
+        const fallbackResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            uris: ['spotify:track:4iV5W9uYEdYUVa79Axb7Rh'] // "Imagine" by John Lennon as fallback
+          })
+        });
+        
+        if (fallbackResponse.ok) {
+          console.log('Added fallback song to playlist after error');
+          res.json({
+            success: true,
+            playlist: {
+              id: playlistData.id,
+              name: playlistData.name,
+              description: playlistData.description,
+              uri: playlistData.uri
+            },
+            message: 'Playlist created successfully with fallback song'
+          });
+        } else {
+          res.json({
+            success: true,
+            playlist: {
+              id: playlistData.id,
+              name: playlistData.name,
+              description: playlistData.description,
+              uri: playlistData.uri
+            },
+            message: 'Playlist created successfully (failed to add songs)'
+          });
+        }
+      } catch (fallbackError) {
+        console.error('Fallback song also failed:', fallbackError);
         res.json({
           success: true,
           playlist: {
@@ -647,21 +760,9 @@ app.post('/api/create-dynamic-playlist', async (req, res) => {
             description: playlistData.description,
             uri: playlistData.uri
           },
-          message: 'Playlist created successfully (failed to add initial song)'
+          message: 'Playlist created successfully (failed to add songs)'
         });
       }
-    } else {
-      // No filters provided, just return the created playlist
-      res.json({
-        success: true,
-        playlist: {
-          id: playlistData.id,
-          name: playlistData.name,
-          description: playlistData.description,
-          uri: playlistData.uri
-        },
-        message: 'Playlist created successfully'
-      });
     }
     
   } catch (error) {
