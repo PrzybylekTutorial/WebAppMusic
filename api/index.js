@@ -752,5 +752,22 @@ app.post('/api/add-specific-song-to-playlist', async (req, res) => {
   }
 });
 
-// Export for Vercel
-module.exports = app; 
+// Export for Vercel - Serverless function format
+module.exports = (req, res) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.status(200).end();
+    return;
+  }
+
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // Handle the request through Express app
+  app(req, res);
+}; 
