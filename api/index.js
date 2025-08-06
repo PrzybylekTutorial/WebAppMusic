@@ -183,6 +183,11 @@ app.get('/test', (req, res) => {
   res.json({ message: 'Server is working!' });
 });
 
+// Also handle the /api/test route for Vercel
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Server is working!' });
+});
+
 // ===== SPOTIFY OAUTH CONFIGURATION =====
 // OAuth redirect URI (must match exactly what's configured in Spotify app settings)
 const redirect_uri = process.env.REDIRECT_URI || 'https://web-app-music-przybylektutorials-projects.vercel.app/api/auth/callback';
@@ -202,7 +207,47 @@ app.get('/auth/login', (req, res) => {
   res.redirect('https://accounts.spotify.com/authorize?' + params);
 });
 
+// Also handle the /api/auth/login route for Vercel
+app.get('/api/auth/login', (req, res) => {
+  const params = querystring.stringify({
+    response_type: 'code',
+    client_id,
+    scope,
+    redirect_uri
+  });
+  res.redirect('https://accounts.spotify.com/authorize?' + params);
+});
+
 app.get('/auth/callback', async (req, res) => {
+  const code = req.query.code || null;
+  if (!code) return res.status(400).send('No code provided');
+  const authOptions = {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + Buffer.from(client_id + ':' + client_secret).toString('base64'),
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: querystring.stringify({
+      code,
+      redirect_uri,
+      grant_type: 'authorization_code'
+    })
+  };
+  const response = await fetch('https://accounts.spotify.com/api/token', authOptions);
+  const data = await response.json();
+  if (data.access_token) {
+    req.session.access_token = data.access_token;
+    req.session.refresh_token = data.refresh_token;
+    // Redirect to frontend with token in query (for demo, you can improve this later)
+    const frontendUrl = process.env.FRONTEND_URL || 'https://web-app-music-przybylektutorials-projects.vercel.app';
+    res.redirect(frontendUrl + '/?access_token=' + data.access_token);
+  } else {
+    res.status(400).json(data);
+  }
+});
+
+// Also handle the /api/auth/callback route for Vercel
+app.get('/api/auth/callback', async (req, res) => {
   const code = req.query.code || null;
   if (!code) return res.status(400).send('No code provided');
   const authOptions = {
@@ -247,6 +292,11 @@ app.get('/auth/logout', (req, res) => {
 
 // Test endpoint to check if server is working
 app.get('/auth/test', (req, res) => {
+  res.json({ message: 'Auth endpoints are working', session: req.session });
+});
+
+// Also handle the /api/auth/test route for Vercel
+app.get('/api/auth/test', (req, res) => {
   res.json({ message: 'Auth endpoints are working', session: req.session });
 });
 
