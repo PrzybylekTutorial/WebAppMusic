@@ -199,14 +199,20 @@ const validateToken = async (token) => {
 };
 
 const handleApiError = async (response) => {
-  let errorData;
+  let errorMessage;
   try {
-    errorData = await response.json();
+    const errorData = await response.json();
+    errorMessage = errorData.error || 'API request failed';
   } catch (e) {
-    const text = await response.text();
-    throw new Error(`Server error: ${response.status} - ${text}`);
+    // If JSON parsing fails, try to get text
+    try {
+      const text = await response.text();
+      errorMessage = `Server error: ${response.status} - ${text}`;
+    } catch (textError) {
+      errorMessage = `Server error: ${response.status}`;
+    }
   }
-  throw new Error(errorData.error || 'API request failed');
+  throw new Error(errorMessage);
 };
 
 // Reusable components
@@ -291,7 +297,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
         playlistName: 'Dynamic Music Game Playlist'
       };
 
-      const response = await fetch(`${API_BASE_URL}/create-playlist-with-song`, {
+      const response = await fetch(`${API_BASE_URL}/create-dynamic-playlist`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

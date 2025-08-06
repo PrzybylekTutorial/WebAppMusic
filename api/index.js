@@ -496,7 +496,14 @@ app.post('/api/search-and-add-to-playlist', async (req, res) => {
 
 app.post('/api/create-dynamic-playlist', async (req, res) => {
   try {
-    const { name = 'Dynamic Music Game Playlist', description = 'Auto-generated playlist for music guessing game' } = req.body;
+    const { 
+      name = 'Dynamic Music Game Playlist', 
+      description = 'Auto-generated playlist for music guessing game',
+      genre = null,
+      yearFrom = null,
+      yearTo = null,
+      playlistName = null
+    } = req.body;
     
     // Use user's access token from Authorization header
     const authHeader = req.headers.authorization;
@@ -521,6 +528,9 @@ app.post('/api/create-dynamic-playlist', async (req, res) => {
     const userData = await userResponse.json();
     const userId = userData.id;
     
+    // Use playlistName if provided, otherwise use name
+    const playlistNameToUse = playlistName || name;
+    
     // Create new playlist
     const createResponse = await fetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
       method: 'POST',
@@ -529,7 +539,7 @@ app.post('/api/create-dynamic-playlist', async (req, res) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        name,
+        name: playlistNameToUse,
         description,
         public: false
       })
@@ -544,17 +554,115 @@ app.post('/api/create-dynamic-playlist', async (req, res) => {
     }
     
     const playlistData = await createResponse.json();
+    const playlistId = playlistData.id;
     
-    res.json({
-      success: true,
-      playlist: {
-        id: playlistData.id,
-        name: playlistData.name,
-        description: playlistData.description,
-        uri: playlistData.uri
-      },
-      message: 'Playlist created successfully'
-    });
+    // If filters are provided, add a random song from database
+    if (genre || yearFrom || yearTo) {
+      try {
+        console.log('Adding random song to new playlist with filters:', { genre, yearFrom, yearTo });
+        
+        const filters = {
+          genre: genre || null,
+          yearFrom: yearFrom || null,
+          yearTo: yearTo || null
+        };
+        
+        // Find a unique random song for the playlist
+        const uniqueSongData = await findUniqueRandomSong(playlistId, filters, token, 10);
+        
+        if (uniqueSongData) {
+          const { song, track } = uniqueSongData;
+          const trackUri = track.uri;
+          
+          // Add track to the new playlist
+          const addTrackResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              uris: [trackUri]
+            })
+          });
+          
+          if (addTrackResponse.ok) {
+            console.log('Successfully added random song to new playlist:', track.name);
+            
+            res.json({
+              success: true,
+              playlist: {
+                id: playlistData.id,
+                name: playlistData.name,
+                description: playlistData.description,
+                uri: playlistData.uri
+              },
+              addedSong: {
+                id: track.id,
+                title: track.name,
+                artist: track.artists.map(a => a.name).join(', '),
+                album: track.album.name,
+                uri: track.uri,
+                preview_url: track.preview_url
+              },
+              originalSong: song,
+              message: 'Playlist created successfully with random song from database'
+            });
+          } else {
+            // Playlist created but failed to add song
+            console.error('Failed to add song to playlist, but playlist was created');
+            res.json({
+              success: true,
+              playlist: {
+                id: playlistData.id,
+                name: playlistData.name,
+                description: playlistData.description,
+                uri: playlistData.uri
+              },
+              message: 'Playlist created successfully (failed to add initial song)'
+            });
+          }
+        } else {
+          // Playlist created but no song found
+          console.log('No suitable song found for filters, but playlist was created');
+          res.json({
+            success: true,
+            playlist: {
+              id: playlistData.id,
+              name: playlistData.name,
+              description: playlistData.description,
+              uri: playlistData.uri
+            },
+            message: 'Playlist created successfully (no suitable song found for filters)'
+          });
+        }
+      } catch (songError) {
+        console.error('Error adding song to new playlist:', songError);
+        // Playlist created but failed to add song
+        res.json({
+          success: true,
+          playlist: {
+            id: playlistData.id,
+            name: playlistData.name,
+            description: playlistData.description,
+            uri: playlistData.uri
+          },
+          message: 'Playlist created successfully (failed to add initial song)'
+        });
+      }
+    } else {
+      // No filters provided, just return the created playlist
+      res.json({
+        success: true,
+        playlist: {
+          id: playlistData.id,
+          name: playlistData.name,
+          description: playlistData.description,
+          uri: playlistData.uri
+        },
+        message: 'Playlist created successfully'
+      });
+    }
     
   } catch (error) {
     console.error('Create playlist error:', error);
