@@ -1,65 +1,56 @@
+// ===== SPOTIFY API CONFIGURATION MODULE =====
+// This module handles Spotify API authentication and basic API operations
+// Uses client credentials flow for server-to-server authentication
+
+// Import fetch dynamically for making HTTP requests (ES6 module compatibility)
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+// Import querystring module for URL parameter encoding
 const qs = require('querystring');
+// Load environment variables from .env file
 require('dotenv').config({ path: __dirname + '/.env' });
 
+// ===== SPOTIFY CREDENTIALS =====
+// Get Spotify app credentials from environment variables
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
-const PLAYLIST_ID = '6ttSx3ZVwaaoyz9qMuH3w7'; // Today's Top Hits
+
+// ===== TOKEN MANAGEMENT =====
+// Cache for access token to avoid repeated authentication
 let accessToken = null;
+// Timestamp when token expires (for automatic refresh)
 let tokenExpires = 0;
 
-console.log('CLIENT_ID:', process.env.SPOTIFY_CLIENT_ID);
-console.log('CLIENT_SECRET:', process.env.SPOTIFY_CLIENT_SECRET);
-
+// ===== AUTHENTICATION FUNCTIONS =====
+// Function to get Spotify access token using client credentials flow
+// Implements token caching to avoid repeated authentication requests
 async function getAccessToken() {
+  // Check if we have a valid cached token (not expired)
   if (accessToken && Date.now() < tokenExpires) {
-    return accessToken;
+    return accessToken; // Return cached token if still valid
   }
+  
+  // Make authentication request to Spotify
   const res = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': 'Basic ' + Buffer.from(CLIENT_ID + ':' + CLIENT_SECRET).toString('base64'),
+      'Content-Type': 'application/x-www-form-urlencoded', // Required for form data
+      'Authorization': 'Basic ' + Buffer.from(CLIENT_ID + ':' + CLIENT_SECRET).toString('base64'), // Base64 encoded credentials
     },
-    body: qs.stringify({ grant_type: 'client_credentials' })
+    body: qs.stringify({ grant_type: 'client_credentials' }) // Client credentials flow
   });
+  
+  // Parse the response
   const data = await res.json();
+  // Cache the new access token
   accessToken = data.access_token;
-  tokenExpires = Date.now() + (data.expires_in - 60) * 1000; // refresh 1 min early
+  // Set expiration time (refresh 1 minute early to avoid edge cases)
+  tokenExpires = Date.now() + (data.expires_in - 60) * 1000;
+  
   return accessToken;
 }
 
-async function getPlaylistTracks(limit = 100) {
-  if (limit < 1 || limit > 100) limit = 100; // Defensive: clamp to valid range
-  const token = await getAccessToken();
-  const res = await fetch(`https://api.spotify.com/v1/playlists/${PLAYLIST_ID}/tracks?limit=${limit}`, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
-  const data = await res.json();
-  console.log('Spotify playlist API response:', data);
-  if (!data.items) {
-    throw new Error('Spotify API did not return items: ' + JSON.stringify(data));
-  }
-  const filtered = data.items
-    .map(item => item.track)
-    .filter(track => {
-      console.log(track.name, track.preview_url); // Add this line
-      return track && track.preview_url;
-    });
-  console.log('Tracks with preview:', filtered.length);
-  return filtered;
-}
-
-async function playTrack(device_id, trackUri) {
-  const token = await getAccessToken();
-  await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${device_id}`, {
-    method: 'PUT',
-    body: JSON.stringify({ uris: [trackUri] }),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-}
-
-module.exports = { getAccessToken, getPlaylistTracks, playTrack };
+// ===== MODULE EXPORTS =====
+// Export functions for use in other modules
+module.exports = { 
+  getAccessToken    // Get Spotify access token
+};

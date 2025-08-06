@@ -1,81 +1,218 @@
-import React, { useEffect, useState, useCallback } from 'react';
+// Import React hooks for state management and side effects
+import React, { useState, useEffect, useCallback } from 'react';
+// Import Spotify service functions for API interactions (playback control, playlist management, etc.)
+import { 
+  SPOTIFY_CONFIG,           // Configuration object with playlist IDs and API settings
+  getPlaylistTracks,        // Function to fetch tracks from Spotify playlists
+  getTrackDetails,          // Function to get detailed track information
+  playTrack,                // Function to start playing a specific track
+  pausePlayback,            // Function to pause current playback
+  resumePlayback,           // Function to resume paused playback
+  getCurrentPlayback,       // Function to get current playback state
+  seekToPosition            // Function to seek to specific position in track
+} from './spotifyService';
+// Import the DynamicPlaylistManager component for playlist creation and management
+import DynamicPlaylistManager from './DynamicPlaylistManager';
 
 function App() {
+  // ===== STATE MANAGEMENT =====
+  // Array of Spotify track URIs (unique identifiers) for the game
   const [trackUris, setTrackUris] = useState([]);
+  // Spotify device ID for controlling playback (required for Web Playback SDK)
   const [deviceId, setDeviceId] = useState(null);
+  // Currently playing song object with metadata (title, artist, album, etc.)
   const [currentSong, setCurrentSong] = useState(null);
+  // User's current guess input text
   const [userGuess, setUserGuess] = useState('');
+  // Result of the last guess attempt ('correct', 'incorrect', or null)
   const [guessResult, setGuessResult] = useState(null);
+  // Boolean indicating if music is currently playing
   const [isPlaying, setIsPlaying] = useState(false);
+  // Player's current score (increases by 10 for each correct guess)
   const [score, setScore] = useState(0);
+  // Total number of guesses made (correct and incorrect)
   const [totalGuesses, setTotalGuesses] = useState(0);
+  // Current streak of correct guesses (resets to 0 on incorrect guess)
   const [streak, setStreak] = useState(0);
+  // Current playback position in milliseconds (for progress bar)
   const [progress, setProgress] = useState(0);
+  // Total song duration in milliseconds (for progress bar)
   const [duration, setDuration] = useState(0);
-  const [gameMode, setGameMode] = useState('normal'); // 'normal', 'timeAttack', 'endless'
+  // Current game mode ('normal', 'timeAttack', 'endless')
+  const [gameMode, setGameMode] = useState('normal');
+  // Number of rounds/songs played in current session
   const [roundsPlayed, setRoundsPlayed] = useState(0);
+  // Player's highest score achieved (persisted across sessions)
   const [highScore, setHighScore] = useState(0);
+  // Player's longest streak achieved (persisted across sessions)
   const [bestStreak, setBestStreak] = useState(0);
-  const [gameModeDuration, setGameModeDuration] = useState(30000); // 30 seconds default
+  // Duration limit for time attack mode in milliseconds (30 seconds default)
+  const [gameModeDuration, setGameModeDuration] = useState(30000);
+  // Boolean indicating if playback is paused (separate from isPlaying)
   const [isPaused, setIsPaused] = useState(false);
+  // Loading state for API calls and operations
   const [isLoading, setIsLoading] = useState(false);
+  // Array of autocomplete suggestions for user input
   const [suggestions, setSuggestions] = useState([]);
+  // Boolean to show/hide the suggestions dropdown
   const [showSuggestions, setShowSuggestions] = useState(false);
+  // Array of all song titles for autocomplete functionality
   const [allSongTitles, setAllSongTitles] = useState([]);
+  // ID of the current dynamic playlist (created from MongoDB database)
+  const [dynamicPlaylistId, setDynamicPlaylistId] = useState(null);
+  // Boolean to use dynamic playlist vs static Spotify playlist
+  const [useDynamicPlaylist, setUseDynamicPlaylist] = useState(false);
+  // Set of track URIs that have been played in current session (prevents duplicates)
+  const [playedSongs, setPlayedSongs] = useState(new Set());
 
+  // ===== URL PARAMETER EXTRACTION =====
+  // Extract URL parameters from the current page (used for OAuth callback)
   const urlParams = new URLSearchParams(window.location.search);
+  // Get the Spotify access token from URL parameters (passed after OAuth authentication)
   const accessToken = urlParams.get('access_token');
 
+  // ===== HELPER FUNCTIONS =====
+  // Helper function to get a random song that hasn't been played yet in current session
+  const getRandomUnplayedSong = () => {
+    // Return null if no tracks are available
+    if (trackUris.length === 0) return null;
+    
+    // Filter out songs that have already been played in this session
+    // playedSongs is a Set for O(1) lookup performance
+    const unplayedSongs = trackUris.filter(uri => !playedSongs.has(uri));
+    
+    // If all songs have been played, reset the session and start fresh
+    if (unplayedSongs.length === 0) {
+      console.log('All songs have been played, resetting session...');
+      // Clear the played songs set to allow all songs to be played again
+      setPlayedSongs(new Set());
+      // Return a random song from the entire playlist
+      return trackUris[Math.floor(Math.random() * trackUris.length)];
+    }
+    
+    // Return a random song from the unplayed songs
+    // Math.floor(Math.random() * length) generates a random index
+    return unplayedSongs[Math.floor(Math.random() * unplayedSongs.length)];
+  };
 
+  // ===== CORE FUNCTIONS =====
+  // Main function to fetch track URIs from either dynamic or static playlists
   const fetchTrackUris = async () => {
-    if (!accessToken) return;
+    // Check if user is authenticated with Spotify
+    if (!accessToken) {
+      console.log('No access token available');
+      return;
+    }
+    
+    console.log('Fetching playlist tracks...');
     
     try {
-      console.log('Fetching playlist tracks...');
-      // Use a public playlist instead
-      const res = await fetch(
-        // `https://api.spotify.com/v1/playlists/6ttSx3ZVwaaoyz9qMuH3w7/tracks`,
-        `https://api.spotify.com/v1/track/5SuOikwiRyPMVoIQDJUgSV`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` }
+      // Variables to store playlist data and ID
+      let playlistData;
+      let playlistId;
+      
+      // Check if user wants to use dynamic playlist (created from MongoDB database)
+      if (useDynamicPlaylist && dynamicPlaylistId) {
+        // Use dynamic playlist created by the user
+        playlistId = dynamicPlaylistId;
+        console.log(`Using dynamic playlist: ${playlistId}`);
+        
+        // Fetch tracks from our backend API (which gets them from Spotify)
+        const response = await fetch(`http://localhost:5000/api/playlist-tracks/${playlistId}`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}` // Send user's token for authentication
+          }
+        });
+        // Check if the request was successful
+        if (!response.ok) {
+          throw new Error('Failed to fetch dynamic playlist');
         }
-      );
-      
-      if (!res.ok) {
-        throw new Error(`Failed to fetch playlist: ${res.status}`);
+        
+        // Parse the response and transform data to match expected format
+        const { tracks } = await response.json();
+        // Transform tracks to match the format expected by the rest of the app
+        playlistData = { items: tracks.map(track => ({ track })) };
+        
+      } else {
+        // Use original static playlist logic (pre-defined Spotify playlists)
+        playlistId = SPOTIFY_CONFIG.PLAYLIST_ID; // Get playlist ID from config
+        
+        try {
+          // Try to fetch from primary playlist first
+          playlistData = await getPlaylistTracks(playlistId, accessToken, SPOTIFY_CONFIG.MAX_TRACKS);
+          console.log(`Successfully fetched primary playlist: ${playlistId}`);
+          
+        } catch (primaryError) {
+          // If primary playlist fails, log the error and try fallback
+          console.warn('Primary playlist failed, trying fallback:', primaryError.message);
+          
+          // Fallback to secondary/public playlist as backup
+          playlistId = SPOTIFY_CONFIG.FALLBACK_PLAYLIST_ID;
+          playlistData = await getPlaylistTracks(playlistId, accessToken, SPOTIFY_CONFIG.MAX_TRACKS);
+          console.log(`Successfully fetched fallback playlist: ${playlistId}`);
+        }
       }
       
-      const data = await res.json();
-      console.log('Playlist data received:', data);
-      
-      if (!data || !data.items) {
-        throw new Error('Invalid playlist data received');
+      // Validate that we received proper playlist data structure
+      if (!playlistData || !playlistData.items) {
+        throw new Error('Invalid playlist data structure received');
       }
       
-      console.log('Number of tracks in playlist:', data.items.length);
+      console.log('Number of tracks in playlist:', playlistData.items.length);
       
-      const uris = data.items
-        .filter(item => item && item.track && item.track.uri)
-        .map(item => item.track.uri);
+      // ===== TRACK DATA EXTRACTION AND VALIDATION =====
+      // Filter and transform playlist items to extract valid track data
+      const validTracks = playlistData.items
+        // Filter out invalid items (missing track, URI, or name)
+        .filter(item => item && item.track && item.track.uri && (item.track.name || item.track.title))
+        // Transform each item to standardized format
+        .map(item => ({
+          uri: item.track.uri, // Spotify track URI (unique identifier)
+          name: item.track.name || item.track.title, // Handle different data structures
+          artist: item.track.artist || item.track.artists?.[0]?.name || 'Unknown Artist', // Extract artist name
+          album: item.track.album || item.track.album?.name || 'Unknown Album' // Extract album name
+        }));
       
-      // Extract song titles for autocomplete
-      const titles = data.items
-        .filter(item => item && item.track && item.track.name)
-        .map(item => item.track.name);
+      // Debug logging to help troubleshoot data structure issues
+      console.log('Raw playlist items:', playlistData.items.length);
+      console.log('Valid tracks after filtering:', validTracks.length);
+      console.log('Sample raw item:', playlistData.items[0]);
       
-      console.log('Extracted URIs:', uris.length);
-      console.log('Extracted titles:', titles.length);
-      console.log('Sample titles:', titles.slice(0, 5));
+      // Check if we have any valid tracks after filtering
+      if (validTracks.length === 0) {
+        console.error('No valid tracks found. Raw items:', playlistData.items);
+        throw new Error('No valid tracks found in playlist. Please check if the playlist contains any tracks.');
+      }
       
-      setTrackUris(uris);
-      setAllSongTitles(titles);
-      console.log('Loaded', titles.length, 'song titles for autocomplete');
+      // Log successful extraction for debugging
+      console.log('Valid tracks extracted:', validTracks.length);
+      console.log('Sample tracks:', validTracks.slice(0, 3).map(t => `${t.name} by ${t.artist}`));
+      
+      // ===== STATE UPDATE =====
+      // Update track URIs for game functionality
+      setTrackUris(validTracks.map(track => track.uri));
+      // Update song titles for autocomplete functionality
+      setAllSongTitles(validTracks.map(track => track.name));
+      
+      console.log(`Successfully loaded ${validTracks.length} tracks for autocomplete`);
       
     } catch (error) {
-      console.error('Error fetching track URIs:', error);
-      console.error('Access token:', accessToken ? 'Present' : 'Missing');
-      console.error('Response status:', error.message);
-      alert('Failed to load playlist. Please refresh the page and try logging in again.');
+      console.error('Error fetching playlist tracks:', error);
+      setTrackUris([]);
+      setAllSongTitles([]);
+      
+      // Show user-friendly error message
+      let errorMessage = 'Failed to load playlist. Please try again later.';
+      
+      if (error.message.includes('401')) {
+        errorMessage = 'Authentication failed. Please log in again.';
+      } else if (error.message.includes('404')) {
+        errorMessage = 'Playlist not found. Please check your playlist ID.';
+      } else if (error.message.includes('403')) {
+        errorMessage = 'Access denied. Please check playlist permissions.';
+      }
+      
+      alert(errorMessage);
     }
   };
 
@@ -87,7 +224,7 @@ function App() {
       console.log('No access token available');
     }
     // eslint-disable-next-line
-  }, [accessToken]);
+  }, [accessToken, useDynamicPlaylist, dynamicPlaylistId || '']);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -125,10 +262,7 @@ function App() {
     if (!accessToken || !deviceId || !currentSong) return;
     
     try {
-      const response = await fetch('https://api.spotify.com/v1/me/player', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-      const data = await response.json();
+      const data = await getCurrentPlayback(accessToken);
       
       if (data && data.is_playing && data.item && data.item.id === currentSong.id) {
         setProgress(data.progress_ms || 0);
@@ -164,16 +298,13 @@ function App() {
   }, [progress, gameModeDuration, isPlaying, currentSong, guessResult]);
 
   const seekTo = async (position) => {
-    if (!accessToken || !deviceId || !currentSong) return;
+    if (!accessToken || !deviceId) return;
     
     try {
-      await fetch(`https://api.spotify.com/v1/me/player/seek?position_ms=${position}&device_id=${deviceId}`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      await seekToPosition(accessToken, deviceId, position);
       setProgress(position);
     } catch (error) {
-      console.error('Error seeking:', error);
+      console.error('Error seeking to position:', error);
     }
   };
 
@@ -183,26 +314,141 @@ function App() {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // ===== GAMEPLAY FUNCTIONS =====
+  // Main function to play a random unplayed song from the playlist
   const playRandomSong = async () => {
-    if (!accessToken || !deviceId || trackUris.length === 0) return;
+    // Validate that all required data is available before proceeding
+    if (!accessToken || !deviceId || trackUris.length === 0) {
+      console.log('Missing required data:', { accessToken: !!accessToken, deviceId, trackUrisLength: trackUris.length });
+      return;
+    }
     
+    // Set loading state to show user that something is happening
     setIsLoading(true);
     
     try {
-      const randomUri = trackUris[Math.floor(Math.random() * trackUris.length)];
-      const trackId = randomUri.split(':')[2];
-      
-      const songRes = await fetch(`https://api.spotify.com/v1/tracks/${trackId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-      
-      if (!songRes.ok) {
-        throw new Error(`Failed to fetch track: ${songRes.status}`);
+      // Get a random song that hasn't been played yet in this session
+      const randomUri = getRandomUnplayedSong();
+      if (!randomUri) {
+        throw new Error('No unplayed songs available');
       }
       
-      const songData = await songRes.json();
+      // Extract track ID from Spotify URI (format: spotify:track:TRACK_ID)
+      const trackId = randomUri.split(':')[2];
       
-      // Add fallbacks for missing data
+      // Fetch detailed track information from Spotify API
+      const songData = await getTrackDetails(trackId, accessToken);
+      
+      // Validate that we received proper track data
+      if (!songData || !songData.name) {
+        throw new Error('Invalid track data received');
+      }
+      
+      // Update current song state with track details
+      setCurrentSong({
+        id: trackId, // Spotify track ID
+        title: songData.name || 'Unknown Title', // Song title
+        artist: songData.artists && songData.artists.length > 0 ? songData.artists.map(a => a.name).join(', ') : 'Unknown Artist', // Artist names (handle multiple artists)
+        album: songData.album && songData.album.name ? songData.album.name : 'Unknown Album', // Album name
+        uri: randomUri // Full Spotify URI
+      });
+      
+      // Mark this song as played to prevent it from being selected again
+      setPlayedSongs(prev => {
+        const newSet = new Set([...prev, randomUri]); // Add current URI to set
+        console.log(`Song marked as played: ${songData.name} (${newSet.size}/${trackUris.length} total played)`);
+        return newSet;
+      });
+      
+      // Start playing the track using Spotify Web Playback SDK
+      await playTrack(accessToken, deviceId, randomUri);
+      
+      // ===== UPDATE GAME STATE =====
+      setIsPlaying(true); // Set playing state
+      setIsPaused(false); // Ensure not paused
+      setUserGuess(''); // Clear previous guess
+      setGuessResult(null); // Clear previous result
+      setRoundsPlayed(prev => prev + 1); // Increment rounds counter
+      setProgress(0); // Reset progress bar
+      setDuration(songData.duration_ms || 0); // Set total duration
+      
+      // Special handling for endless mode - set duration limit
+      if (gameMode === 'endless') {
+        setGameModeDuration(songData.duration_ms || 0);
+      }
+      
+    } catch (error) {
+      console.error('Error playing random song:', error);
+      alert('Failed to load song. Please try again.');
+    } finally {
+      // Always clear loading state, even if there was an error
+      setIsLoading(false);
+    }
+  };
+
+  // Function to validate user's guess against the current song
+  const checkGuess = (e) => {
+    // Prevent form submission default behavior (page reload)
+    e.preventDefault();
+    
+    // Validate that we have a current song and user input
+    if (!currentSong || !userGuess.trim()) return;
+    
+    // Compare user's guess with song title (case-insensitive)
+    const isCorrect = userGuess.trim().toLowerCase() === currentSong.title.toLowerCase();
+    
+    // ===== UPDATE SCORING SYSTEM =====
+    // Increment total guesses counter (for statistics)
+    setTotalGuesses(prev => prev + 1);
+    
+    if (isCorrect) {
+      // ===== CORRECT GUESS HANDLING =====
+      // Update score (increment by 1 for correct guess)
+      setScore(prev => {
+        const newScore = prev + 1;
+        // Check if this is a new high score
+        if (newScore > highScore) {
+          setHighScore(newScore); // Update high score if beaten
+        }
+        return newScore;
+      });
+      
+      // Update streak (increment by 1 for correct guess)
+      setStreak(prev => {
+        const newStreak = prev + 1;
+        // Check if this is a new best streak
+        if (newStreak > bestStreak) {
+          setBestStreak(newStreak); // Update best streak if beaten
+        }
+        return newStreak;
+      });
+    } else {
+      // ===== INCORRECT GUESS HANDLING =====
+      // Reset streak to 0 for incorrect guess
+      setStreak(0);
+    }
+    
+    // Set guess result for UI feedback
+    setGuessResult({
+      correct: isCorrect,
+      actualTitle: currentSong.title
+    });
+  };
+
+  const playNextSong = async () => {
+    if (!accessToken || !deviceId || trackUris.length === 0) return;
+    
+    try {
+      const randomUri = getRandomUnplayedSong();
+      if (!randomUri) {
+        throw new Error('No unplayed songs available');
+      }
+      
+      const trackId = randomUri.split(':')[2];
+      
+      // Get track details using the service
+      const songData = await getTrackDetails(trackId, accessToken);
+      
       if (!songData || !songData.name) {
         throw new Error('Invalid track data received');
       }
@@ -210,23 +456,20 @@ function App() {
       setCurrentSong({
         id: trackId,
         title: songData.name || 'Unknown Title',
-        artist: songData.artists && songData.artists.length > 0 
-          ? songData.artists.map(a => a.name).join(', ') 
-          : 'Unknown Artist',
-        album: songData.album && songData.album.name 
-          ? songData.album.name 
-          : 'Unknown Album',
+        artist: songData.artists && songData.artists.length > 0 ? songData.artists.map(a => a.name).join(', ') : 'Unknown Artist',
+        album: songData.album && songData.album.name ? songData.album.name : 'Unknown Album',
         uri: randomUri
       });
       
-      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ uris: [randomUri] }),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
+      // Mark this song as played
+      setPlayedSongs(prev => {
+        const newSet = new Set([...prev, randomUri]);
+        console.log(`Song marked as played: ${songData.name} (${newSet.size}/${trackUris.length} total played)`);
+        return newSet;
       });
+      
+      // Play the new track
+      await playTrack(accessToken, deviceId, randomUri);
       
       setIsPlaying(true);
       setIsPaused(false);
@@ -236,63 +479,39 @@ function App() {
       setProgress(0);
       setDuration(songData.duration_ms || 0);
       
-      // Set game mode duration based on mode
       if (gameMode === 'endless') {
         setGameModeDuration(songData.duration_ms || 0);
       }
       
     } catch (error) {
-      console.error('Error playing random song:', error);
-      // You could add a user-friendly error message here
-      alert('Failed to load song. Please try again.');
-    } finally {
-      setIsLoading(false);
+      console.error('Error playing next song:', error);
     }
-  };
-
-  const checkGuess = (e) => {
-    e.preventDefault();
-    if (!currentSong || !userGuess.trim()) return;
-    
-    const isCorrect = userGuess.trim().toLowerCase() === currentSong.title.toLowerCase();
-    
-    // Update scoring
-    setTotalGuesses(prev => prev + 1);
-    if (isCorrect) {
-      setScore(prev => {
-        const newScore = prev + 1;
-        if (newScore > highScore) {
-          setHighScore(newScore);
-        }
-        return newScore;
-      });
-      setStreak(prev => {
-        const newStreak = prev + 1;
-        if (newStreak > bestStreak) {
-          setBestStreak(newStreak);
-        }
-        return newStreak;
-      });
-    } else {
-      setStreak(0);
-    }
-    
-    setGuessResult({
-      correct: isCorrect,
-      actualTitle: currentSong.title
-    });
   };
 
   const skipSong = async () => {
-    await togglePlayPause(); // This will stop the music
-    setCurrentSong(null);
-    setIsPlaying(false);
-    setUserGuess('');
-    setGuessResult(null);
-    setStreak(0);
-    setProgress(0);
-    setDuration(0);
-    setIsPaused(false);
+    if (!accessToken || !deviceId || trackUris.length === 0) return;
+    
+    try {
+      // Stop current playback
+      await pausePlayback(accessToken, deviceId);
+      
+      // Reset current song and guess states
+      setCurrentSong(null);
+      setUserGuess('');
+      setGuessResult(null);
+      setIsPlaying(false);
+      setIsPaused(false);
+      setProgress(0);
+      
+      // Reset streak (penalty for skipping)
+      setStreak(0);
+      
+      // Automatically play the next song
+      await playNextSong();
+      
+    } catch (error) {
+      console.error('Error skipping song:', error);
+    }
   };
 
   const playAgain = () => {
@@ -309,14 +528,7 @@ function App() {
     // If song has reached the end of game mode duration, start playing from beginning
     if (progress >= gameModeDuration && gameMode !== 'endless') {
       try {
-        await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-          method: 'PUT',
-          body: JSON.stringify({ uris: [currentSong.uri] }),
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}` 
-          }
-        });
+        await playTrack(accessToken, deviceId, currentSong.uri);
         setIsPaused(false);
         setProgress(0);
         return;
@@ -325,26 +537,15 @@ function App() {
         return;
       }
     }
-    if (!accessToken || !deviceId) return;
     
     try {
       if (isPaused) {
         // Resume playback
-        await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        });
+        await resumePlayback(accessToken, deviceId);
         setIsPaused(false);
       } else {
         // Pause playback
-        await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        });
+        await pausePlayback(accessToken, deviceId);
         setIsPaused(true);
       }
     } catch (error) {
@@ -356,17 +557,10 @@ function App() {
     if (!accessToken || !deviceId || !currentSong) return;
     
     try {
-      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ uris: [currentSong.uri] }),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      
-      setProgress(0);
+      // Restart the current song from the beginning
+      await playTrack(accessToken, deviceId, currentSong.uri);
       setIsPaused(false);
+      setProgress(0);
     } catch (error) {
       console.error('Error restarting music:', error);
     }
@@ -381,6 +575,7 @@ function App() {
     setIsPlaying(false);
     setUserGuess('');
     setGuessResult(null);
+    setPlayedSongs(new Set()); // Reset played songs for new game session
     // setTimerActive(false); // Removed timer-related state
   };
 
@@ -388,19 +583,14 @@ function App() {
     if (!accessToken || !deviceId) return;
     
     try {
-      await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
+      await pausePlayback(accessToken, deviceId);
       setIsPaused(true);
     } catch (error) {
       console.error('Error stopping music:', error);
     }
   };
 
-    const generateSuggestions = (input) => {
+    const generateSuggestions = async (input) => {
     if (!input || input.length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -409,12 +599,52 @@ function App() {
 
     const inputLower = input.toLowerCase();
     
-    // Search through actual song titles from the playlist
+    // Search through actual song titles from the playlist (Spotify)
     let matchingSongs = allSongTitles.filter(song => 
       song.toLowerCase().includes(inputLower)
     );
 
-    // If no songs loaded yet, show some basic suggestions
+    // Search through MongoDB database
+    try {
+      const response = await fetch(`http://localhost:5000/api/search?q=${encodeURIComponent(input)}&limit=10`);
+      if (response.ok) {
+        const mongoResults = await response.json();
+        const mongoSongs = mongoResults.map(song => song.title);
+        
+        // Combine Spotify and MongoDB results
+        const allResults = [...new Set([...matchingSongs, ...mongoSongs])];
+        
+        // Sort by relevance (exact matches first, then partial matches)
+        const sortedSuggestions = allResults.sort((a, b) => {
+          const aLower = a.toLowerCase();
+          const bLower = b.toLowerCase();
+          
+          // Exact match gets highest priority
+          if (aLower === inputLower) return -1;
+          if (bLower === inputLower) return 1;
+          
+          // Starts with input gets second priority
+          if (aLower.startsWith(inputLower)) return -1;
+          if (bLower.startsWith(inputLower)) return 1;
+          
+          // Otherwise, sort alphabetically
+          return aLower.localeCompare(bLower);
+        });
+
+        // Limit to 8 suggestions (more since we have more data)
+        const suggestions = sortedSuggestions.slice(0, 8);
+        
+        console.log(`Search for "${input}" found ${allResults.length} total matches (Spotify: ${matchingSongs.length}, MongoDB: ${mongoSongs.length}), showing ${suggestions.length}`);
+        
+        setSuggestions(suggestions);
+        setShowSuggestions(suggestions.length > 0);
+        return;
+      }
+    } catch (error) {
+      console.log('MongoDB search failed, using only Spotify results:', error.message);
+    }
+
+    // Fallback to Spotify-only search if MongoDB fails
     if (allSongTitles.length === 0) {
       const basicSuggestions = [
         'Loading songs from playlist...',
@@ -455,7 +685,7 @@ function App() {
   const handleGuessChange = (e) => {
     const value = e.target.value;
     setUserGuess(value);
-    generateSuggestions(value);
+    generateSuggestions(value); // This is now async but we don't need to await it
   };
 
   const selectSuggestion = (suggestion) => {
@@ -497,9 +727,9 @@ function App() {
           </p>
         </div>
 
-        {/* Login Button */}
-        {!accessToken && (
-          <div style={{ textAlign: 'center', marginBottom: 30 }}>
+        {/* Login/Logout Buttons */}
+        <div style={{ textAlign: 'center', marginBottom: 30 }}>
+          {!accessToken ? (
             <a href="http://127.0.0.1:5000/auth/login" style={{ textDecoration: 'none' }}>
               <button style={{
                 padding: '15px 30px',
@@ -522,8 +752,33 @@ function App() {
                 🎧 Connect with Spotify
               </button>
             </a>
-          </div>
-        )}
+          ) : (
+            <div style={{ display: 'flex', gap: 15, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <div style={{ color: '#666', fontSize: '1rem', display: 'flex', alignItems: 'center' }}>
+                ✅ Connected to Spotify
+              </div>
+              <a href="http://127.0.0.1:5000/auth/logout" style={{ textDecoration: 'none' }}>
+                <button style={{
+                  padding: '10px 20px',
+                  fontSize: '1rem',
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 25,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  fontWeight: 'bold'
+                }} onMouseOver={(e) => {
+                  e.target.style.transform = 'translateY(-1px)';
+                }} onMouseOut={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                }}>
+                  🚪 Logout & Re-authenticate
+                </button>
+              </a>
+            </div>
+          )}
+        </div>
 
         {/* Score Dashboard */}
         {accessToken && (
@@ -560,6 +815,113 @@ function App() {
                 <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{highScore}</div>
                 <div style={{ fontSize: '0.9rem' }}>High Score</div>
               </div>
+              <div style={{ textAlign: 'center', color: 'white' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{playedSongs.size}/{trackUris.length}</div>
+                <div style={{ fontSize: '0.9rem' }}>Songs Played</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Session Progress Bar */}
+        {accessToken && trackUris.length > 0 && (
+          <div style={{ 
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            padding: 15,
+            borderRadius: 10,
+            marginBottom: 20,
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: 'bold' }}>
+                🎵 Session Progress: {playedSongs.size} of {trackUris.length} songs played
+              </span>
+              <span style={{ fontSize: '0.8rem', color: '#888' }}>
+                {trackUris.length - playedSongs.size} songs remaining
+              </span>
+            </div>
+            <div style={{ 
+              width: '100%', 
+              height: 8, 
+              backgroundColor: '#e9ecef', 
+              borderRadius: 4,
+              overflow: 'hidden'
+            }}>
+              <div style={{ 
+                width: `${(playedSongs.size / trackUris.length) * 100}%`, 
+                height: '100%', 
+                backgroundColor: '#1DB954',
+                transition: 'width 0.3s ease'
+              }} />
+            </div>
+            {playedSongs.size === trackUris.length && (
+              <div style={{ 
+                textAlign: 'center', 
+                marginTop: 8, 
+                padding: 8, 
+                backgroundColor: '#d4edda', 
+                color: '#155724', 
+                borderRadius: 5,
+                fontSize: '0.9rem',
+                fontWeight: 'bold'
+              }}>
+                🎉 All songs played! Session will reset on next song.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Dynamic Playlist Manager */}
+        {accessToken && (
+          <DynamicPlaylistManager 
+            accessToken={accessToken}
+            onPlaylistCreated={(playlistId) => {
+              setDynamicPlaylistId(playlistId);
+              setUseDynamicPlaylist(true);
+            }}
+          />
+        )}
+
+        {/* Playlist Selection */}
+        {accessToken && deviceId && (
+          <div style={{ marginBottom: 30 }}>
+            <h3 style={{ textAlign: 'center', marginBottom: 20, color: '#333' }}>
+              🎵 Choose Your Music Source
+            </h3>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 15, flexWrap: 'wrap' }}>
+              <button 
+                onClick={() => setUseDynamicPlaylist(false)}
+                style={{ 
+                  padding: '12px 20px',
+                  backgroundColor: !useDynamicPlaylist ? '#28a745' : '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 25,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  fontWeight: 'bold',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                }}
+              >
+                📻 Original Playlist
+              </button>
+              <button 
+                onClick={() => setUseDynamicPlaylist(true)}
+                disabled={!dynamicPlaylistId}
+                style={{ 
+                  padding: '12px 20px',
+                  backgroundColor: useDynamicPlaylist && dynamicPlaylistId ? '#007bff' : '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 25,
+                  cursor: dynamicPlaylistId ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.3s ease',
+                  fontWeight: 'bold',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                }}
+              >
+                🎲 Dynamic Database ({dynamicPlaylistId ? 'Ready' : 'Create First'})
+              </button>
             </div>
           </div>
         )}
@@ -837,7 +1199,6 @@ function App() {
                 value={userGuess}
                 onChange={handleGuessChange}
                 placeholder="Enter song title..."
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 style={{ 
                   padding: '12px 20px',
                   width: '60%',
@@ -852,6 +1213,7 @@ function App() {
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = '#ddd';
+                  setTimeout(() => setShowSuggestions(false), 200);
                 }}
               />
               <button 
