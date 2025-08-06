@@ -1,70 +1,34 @@
 {
   "version": 2,
   "builds": [
-  {
-    "src": "frontend/package.json",
-    "use": "@vercel/static-build",
-    "config": {
-      "distDir": "build"
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    },
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
     }
-  },
-  {
-    "src": "api/package.json",
-    "use": "@vercel/node"
+  ],
+  "rewrites": [
+    {
+      "source": "/api/test-simple",
+      "destination": "/api/test.js"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/frontend/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "CI": "false"
   }
-],
-"rewrites": [
-  {
-    "source": "/api/auth/(.*)",
-    "destination": "/api/index.js"
-  },
-  {
-    "source": "/api/music/(.*)",
-    "destination": "/api/index.js"
-  },
-  {
-    "source": "/api/playlist-tracks/(.*)",
-    "destination": "/api/index.js"
-  },
-  {
-    "source": "/api/search",
-    "destination": "/api/index.js"
-  },
-  {
-    "source": "/api/random-database-song",
-    "destination": "/api/index.js"
-  },
-  {
-    "source": "/api/search-and-add-to-playlist",
-    "destination": "/api/index.js"
-  },
-  {
-    "source": "/api/create-dynamic-playlist",
-    "destination": "/api/index.js"
-  },
-  {
-    "source": "/api/add-random-song-to-playlist",
-    "destination": "/api/index.js"
-  },
-  {
-    "source": "/api/add-specific-song-to-playlist",
-    "destination": "/api/index.js"
-  },
-  {
-    "source": "/api/test",
-    "destination": "/api/index.js"
-  },
-  {
-    "source": "/(.*)",
-    "destination": "/frontend/$1"
-  },
-  {
-    "source": "/api/(.*)",
-    "destination": "/api/index.js"
-  }
-],
-"env": {
-  "NODE_ENV": "production",
-  "CI": "false"
-}
 } 
