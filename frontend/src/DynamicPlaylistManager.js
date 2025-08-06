@@ -358,7 +358,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPlaylistId, accessToken, filters]);
+  }, [currentPlaylistId, accessToken, filters, loadPlaylistTracks]);
 
   const searchSongs = useCallback(async (query) => {
     if (!query.trim()) {
@@ -425,7 +425,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPlaylistId, accessToken]);
+  }, [currentPlaylistId, accessToken, loadPlaylistTracks]);
 
   const loadAvailableGenres = useCallback(async () => {
     setIsLoadingGenres(true);
