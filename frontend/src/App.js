@@ -295,7 +295,7 @@ function App() {
         setTotalGuesses(prev => prev + 1);
       }
     }
-  }, [progress, gameModeDuration, isPlaying, currentSong, guessResult]);
+  }, [progress, gameModeDuration, isPlaying, currentSong, guessResult, stopMusic]);
 
   const seekTo = async (position) => {
     if (!accessToken || !deviceId) return;

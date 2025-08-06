@@ -341,7 +341,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPlaylistId, accessToken, filters]);
+  }, [currentPlaylistId, accessToken, filters, loadPlaylistTracks]);
 
   const loadPlaylistTracks = useCallback(async () => {
     if (!currentPlaylistId || !accessToken) return;
