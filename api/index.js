@@ -24,8 +24,8 @@ app.use(session({
 }));
 
 // Import your existing server logic
-const mongoService = require('../backend/mongoService');
-const spotify = require('../backend/spotify');
+const mongoService = require('./mongoService');
+const spotify = require('./spotify');
 
 // ===== HELPER FUNCTIONS =====
 // Helper function to check if a track already exists in a Spotify playlist
