@@ -13,50 +13,54 @@
     "use": "@vercel/node"
   }
 ],
-"routes": [
+"rewrites": [
   {
-    "src": "/api/auth/(.*)",
-    "dest": "/api/index.js"
+    "source": "/api/auth/(.*)",
+    "destination": "/api/index.js"
   },
   {
-    "src": "/api/music/(.*)",
-    "dest": "/api/index.js"
+    "source": "/api/music/(.*)",
+    "destination": "/api/index.js"
   },
   {
-    "src": "/api/playlist-tracks/(.*)",
-    "dest": "/api/index.js"
+    "source": "/api/playlist-tracks/(.*)",
+    "destination": "/api/index.js"
   },
   {
-    "src": "/api/search",
-    "dest": "/api/index.js"
+    "source": "/api/search",
+    "destination": "/api/index.js"
   },
   {
-    "src": "/api/random-database-song",
-    "dest": "/api/index.js"
+    "source": "/api/random-database-song",
+    "destination": "/api/index.js"
   },
   {
-    "src": "/api/search-and-add-to-playlist",
-    "dest": "/api/index.js"
+    "source": "/api/search-and-add-to-playlist",
+    "destination": "/api/index.js"
   },
   {
-    "src": "/api/create-dynamic-playlist",
-    "dest": "/api/index.js"
+    "source": "/api/create-dynamic-playlist",
+    "destination": "/api/index.js"
   },
   {
-    "src": "/api/add-random-song-to-playlist",
-    "dest": "/api/index.js"
+    "source": "/api/add-random-song-to-playlist",
+    "destination": "/api/index.js"
   },
   {
-    "src": "/api/add-specific-song-to-playlist",
-    "dest": "/api/index.js"
+    "source": "/api/add-specific-song-to-playlist",
+    "destination": "/api/index.js"
   },
   {
-    "src": "/api/test",
-    "dest": "/api/index.js"
+    "source": "/api/test",
+    "destination": "/api/index.js"
   },
   {
-    "src": "/(.*)",
-    "dest": "frontend/$1"
+    "source": "/(.*)",
+    "destination": "/frontend/$1"
+  },
+  {
+    "source": "/api/(.*)",
+    "destination": "/api/index.js"
   }
 ],
 "env": {
