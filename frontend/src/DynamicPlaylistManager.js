@@ -251,6 +251,23 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
   const [showPlaylistTracks, setShowPlaylistTracks] = useState(false);
 
   // API functions
+  const loadPlaylistTracks = useCallback(async () => {
+    if (!currentPlaylistId || !accessToken) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/playlist-tracks/${currentPlaylistId}`, {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+      
+      if (response.ok) {
+        const { tracks } = await response.json();
+        setPlaylistTracks(tracks);
+      }
+    } catch (error) {
+      console.error('Error loading playlist tracks:', error);
+    }
+  }, [currentPlaylistId, accessToken]);
+
   const createDynamicPlaylist = useCallback(async () => {
     if (!accessToken) {
       setMessage('Please connect to Spotify first');
@@ -342,23 +359,6 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
       setIsLoading(false);
     }
   }, [currentPlaylistId, accessToken, filters, loadPlaylistTracks]);
-
-  const loadPlaylistTracks = useCallback(async () => {
-    if (!currentPlaylistId || !accessToken) return;
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/playlist-tracks/${currentPlaylistId}`, {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-      });
-      
-      if (response.ok) {
-        const { tracks } = await response.json();
-        setPlaylistTracks(tracks);
-      }
-    } catch (error) {
-      console.error('Error loading playlist tracks:', error);
-    }
-  }, [currentPlaylistId, accessToken]);
 
   const searchSongs = useCallback(async (query) => {
     if (!query.trim()) {

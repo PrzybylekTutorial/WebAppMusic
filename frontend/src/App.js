@@ -281,6 +281,18 @@ function App() {
     return () => clearInterval(interval);
   }, [currentSong, isPlaying, isPaused, accessToken, deviceId, updateProgress]);
 
+  // Define stopMusic function before it's used in useEffect
+  const stopMusic = async () => {
+    if (!accessToken || !deviceId) return;
+    
+    try {
+      await pausePlayback(accessToken, deviceId);
+      setIsPaused(true);
+    } catch (error) {
+      console.error('Error stopping music:', error);
+    }
+  };
+
   // Add this new useEffect to handle auto-stop
   useEffect(() => {
     if (progress >= gameModeDuration && isPlaying) {
@@ -577,17 +589,6 @@ function App() {
     setGuessResult(null);
     setPlayedSongs(new Set()); // Reset played songs for new game session
     // setTimerActive(false); // Removed timer-related state
-  };
-
-  const stopMusic = async () => {
-    if (!accessToken || !deviceId) return;
-    
-    try {
-      await pausePlayback(accessToken, deviceId);
-      setIsPaused(true);
-    } catch (error) {
-      console.error('Error stopping music:', error);
-    }
   };
 
     const generateSuggestions = async (input) => {
