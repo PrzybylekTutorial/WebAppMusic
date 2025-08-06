@@ -185,7 +185,7 @@ app.get('/test', (req, res) => {
 
 // ===== SPOTIFY OAUTH CONFIGURATION =====
 // OAuth redirect URI (must match exactly what's configured in Spotify app settings)
-const redirect_uri = process.env.REDIRECT_URI || 'http://127.0.0.1:5000/auth/callback';
+const redirect_uri = process.env.REDIRECT_URI || 'https://web-app-music-przybylektutorials-projects.vercel.app/api/auth/callback';
 // Spotify app credentials (should be stored in environment variables)
 const client_id = process.env.SPOTIFY_CLIENT_ID;
 const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
@@ -223,7 +223,7 @@ app.get('/auth/callback', async (req, res) => {
     req.session.access_token = data.access_token;
     req.session.refresh_token = data.refresh_token;
     // Redirect to frontend with token in query (for demo, you can improve this later)
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://web-app-music-przybylektutorials-projects.vercel.app';
     res.redirect(frontendUrl + '/?access_token=' + data.access_token);
   } else {
     res.status(400).json(data);
@@ -239,7 +239,7 @@ app.get('/auth/logout', (req, res) => {
       res.status(500).json({ error: 'Failed to logout' });
     } else {
       console.log('Session destroyed successfully');
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.FRONTEND_URL || 'https://web-app-music-przybylektutorials-projects.vercel.app';
       res.redirect(frontendUrl);
     }
   });

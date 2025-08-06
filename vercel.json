@@ -15,7 +15,43 @@
 ],
 "routes": [
   {
-    "src": "/api/(.*)",
+    "src": "/api/auth/(.*)",
+    "dest": "/api/index.js"
+  },
+  {
+    "src": "/api/music/(.*)",
+    "dest": "/api/index.js"
+  },
+  {
+    "src": "/api/playlist-tracks/(.*)",
+    "dest": "/api/index.js"
+  },
+  {
+    "src": "/api/search",
+    "dest": "/api/index.js"
+  },
+  {
+    "src": "/api/random-database-song",
+    "dest": "/api/index.js"
+  },
+  {
+    "src": "/api/search-and-add-to-playlist",
+    "dest": "/api/index.js"
+  },
+  {
+    "src": "/api/create-dynamic-playlist",
+    "dest": "/api/index.js"
+  },
+  {
+    "src": "/api/add-random-song-to-playlist",
+    "dest": "/api/index.js"
+  },
+  {
+    "src": "/api/add-specific-song-to-playlist",
+    "dest": "/api/index.js"
+  },
+  {
+    "src": "/api/test",
     "dest": "/api/index.js"
   },
   {
