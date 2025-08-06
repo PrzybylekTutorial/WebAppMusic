@@ -131,7 +131,16 @@ function App() {
         // Parse the response and transform data to match expected format
         const { tracks } = await response.json();
         // Transform tracks to match the format expected by the rest of the app
-        playlistData = { items: tracks.map(track => ({ track })) };
+        playlistData = { 
+          items: tracks.map(track => ({ 
+            track: {
+              uri: track.uri,
+              name: track.title,
+              artist: track.artist,
+              album: track.album
+            }
+          }))
+        };
         
       } else {
         // Use original static playlist logic (pre-defined Spotify playlists)
