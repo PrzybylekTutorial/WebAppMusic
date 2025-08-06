@@ -1,16 +1,23 @@
+// Load environment variables
+require('dotenv').config({ path: path.join(__dirname, '..', 'backend', '.env') });
+
 const { MongoClient } = require('mongodb');
 const fs = require('fs').promises;
 const path = require('path');
 
 // MongoDB connection configuration
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://wprzybylski98:Baton999!@cluster0.elobm.mongodb.net/';
-const DATABASE_NAME = 'musicApp';
-const COLLECTION_NAME = 'songs';
+const MONGODB_URI = process.env.MONGODB_URI;
+const DATABASE_NAME = process.env.DATABASE_NAME || 'musicApp';
+const COLLECTION_NAME = process.env.COLLECTION_NAME || 'songs';
 
 async function importDataToMongoDB() {
     let client;
     
     try {
+        if (!MONGODB_URI) {
+            throw new Error('MONGODB_URI environment variable is required. Please set it in your backend/.env file.');
+        }
+        
         console.log('Connecting to MongoDB...');
         client = new MongoClient(MONGODB_URI);
         await client.connect();

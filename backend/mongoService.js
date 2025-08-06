@@ -1,9 +1,9 @@
 const { MongoClient } = require('mongodb');
 
 // MongoDB configuration
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://wprzybylski98:Baton999!@cluster0.elobm.mongodb.net/';
-const DATABASE_NAME = 'musicApp';
-const COLLECTION_NAME = 'songs';
+const MONGODB_URI = process.env.MONGODB_URI;
+const DATABASE_NAME = process.env.DATABASE_NAME || 'musicApp';
+const COLLECTION_NAME = process.env.COLLECTION_NAME || 'songs';
 
 class MongoService {
     constructor() {
@@ -14,6 +14,10 @@ class MongoService {
 
     async connect() {
         try {
+            if (!MONGODB_URI) {
+                throw new Error('MONGODB_URI environment variable is required. Please set it in your .env file.');
+            }
+            
             if (!this.client) {
                 this.client = new MongoClient(MONGODB_URI);
                 await this.client.connect();

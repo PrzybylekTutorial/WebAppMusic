@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 
 // Constants
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = '/api';
 const SPOTIFY_API_URL = 'https://api.spotify.com/v1';
 
 // Styles

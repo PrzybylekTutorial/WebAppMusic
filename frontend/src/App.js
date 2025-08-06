@@ -118,7 +118,7 @@ function App() {
         console.log(`Using dynamic playlist: ${playlistId}`);
         
         // Fetch tracks from our backend API (which gets them from Spotify)
-        const response = await fetch(`http://localhost:5000/api/playlist-tracks/${playlistId}`, {
+        const response = await fetch(`/api/playlist-tracks/${playlistId}`, {
           headers: {
             'Authorization': `Bearer ${accessToken}` // Send user's token for authentication
           }
@@ -606,7 +606,7 @@ function App() {
 
     // Search through MongoDB database
     try {
-      const response = await fetch(`http://localhost:5000/api/search?q=${encodeURIComponent(input)}&limit=10`);
+      const response = await fetch(`/api/search?q=${encodeURIComponent(input)}&limit=10`);
       if (response.ok) {
         const mongoResults = await response.json();
         const mongoSongs = mongoResults.map(song => song.title);
@@ -730,7 +730,7 @@ function App() {
         {/* Login/Logout Buttons */}
         <div style={{ textAlign: 'center', marginBottom: 30 }}>
           {!accessToken ? (
-            <a href="http://127.0.0.1:5000/auth/login" style={{ textDecoration: 'none' }}>
+            <a href="/api/auth/login" style={{ textDecoration: 'none' }}>
               <button style={{
                 padding: '15px 30px',
                 fontSize: '1.2rem',
@@ -757,7 +757,7 @@ function App() {
               <div style={{ color: '#666', fontSize: '1rem', display: 'flex', alignItems: 'center' }}>
                 ✅ Connected to Spotify
               </div>
-              <a href="http://127.0.0.1:5000/auth/logout" style={{ textDecoration: 'none' }}>
+              <a href="/api/auth/logout" style={{ textDecoration: 'none' }}>
                 <button style={{
                   padding: '10px 20px',
                   fontSize: '1rem',

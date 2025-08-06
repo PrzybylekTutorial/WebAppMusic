@@ -1,26 +1,31 @@
-// ===== BACKEND SERVER IMPORTS =====
-// Load environment variables from .env file
-require('dotenv').config({ path: __dirname + '/.env' });
-
-// Import Express.js framework for creating HTTP server and API endpoints
+// Vercel API Routes - Main handler
 const express = require('express');
-// Import CORS middleware to allow cross-origin requests from frontend
 const cors = require('cors');
-// Import Node.js path module for file path operations
-const path = require('path');
-// Import Node.js file system module for reading/writing files
-const fs = require('fs');
-// Import custom Spotify configuration and utilities
-const spotify = require('./spotify');
-
-// Import MongoDB service for database operations
-const mongoService = require('./mongoService');
-// Import session management for user authentication state
 const session = require('express-session');
-// Import querystring module for parsing URL parameters
+const path = require('path');
+const fs = require('fs');
 const querystring = require('querystring');
+
 // Import fetch dynamically for making HTTP requests (ES6 module compatibility)
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+
+// Load environment variables
+require('dotenv').config();
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'fallback_secret_key_change_in_production',
+  resave: false,
+  saveUninitialized: true
+}));
+
+// Import your existing server logic
+const mongoService = require('../backend/mongoService');
+const spotify = require('../backend/spotify');
 
 // ===== HELPER FUNCTIONS =====
 // Helper function to check if a track already exists in a Spotify playlist
@@ -125,59 +130,44 @@ async function searchSpotifyTrack(song, token) {
     if (searchData.tracks && searchData.tracks.items && searchData.tracks.items.length > 0) {
       // Find the best match by comparing titles and artists
       const bestMatch = searchData.tracks.items.find(track => {
-        // Normalize track data for comparison
         const trackTitle = track.name.toLowerCase();
         const trackArtist = track.artists.map(a => a.name.toLowerCase()).join(' ');
         const songTitle = song.title.toLowerCase();
         const songArtist = song.artist.toLowerCase();
         
-        // Check if title and artist match reasonably well
-        // Title match: check if either title contains the other (after cleaning)
-        const titleMatch = trackTitle.includes(songTitle.replace(/\([^)]*\)/g, '').trim()) || 
-                          songTitle.includes(trackTitle);
-        // Artist match: check if either artist name contains the other (after cleaning)
-        const artistMatch = trackArtist.includes(songArtist.replace(/Collective|Duo|Trio|Orchestra/g, '').trim()) ||
-                           songArtist.includes(trackArtist);
-        
-        // Return true only if both title and artist match
-        return titleMatch && artistMatch;
+        // Check if title and artist match (allowing for some variation)
+        return (trackTitle.includes(songTitle) || songTitle.includes(trackTitle)) &&
+               (trackArtist.includes(songArtist) || songArtist.includes(trackArtist));
       });
       
-      // If we found a good match, return it
       if (bestMatch) {
         console.log(`Found good match: "${bestMatch.name}" by "${bestMatch.artists.map(a => a.name).join(', ')}"`);
         return bestMatch;
       }
-      
-      // If no good match found, log all available results for debugging
-      console.log(`No good match found for "${song.title}" by "${song.artist}". Available results:`);
-      searchData.tracks.items.forEach((track, index) => {
-        console.log(`  ${index + 1}. "${track.name}" by "${track.artists.map(a => a.name).join(', ')}"`);
-      });
-      
-      // Don't return the first result if it doesn't match - continue to next strategy
-      console.log(`❌ No suitable match found for "${song.title}" by "${song.artist}"`);
-      continue; // Try the next search strategy
     }
   }
   
-  // If no match found with any strategy, throw an error
-  throw new Error(`No tracks found for "${song.title}" by "${song.artist}" with any search strategy`);
+  // If no good match found, return the first result from the first strategy
+  const fallbackResponse = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(searchStrategies[0])}&type=track&limit=1`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  
+  const fallbackData = await fallbackResponse.json();
+  if (fallbackData.tracks && fallbackData.tracks.items && fallbackData.tracks.items.length > 0) {
+    return fallbackData.tracks.items[0];
+  }
+  
+  throw new Error(`No Spotify track found for: ${song.title} by ${song.artist}`);
 }
 
-// ===== EXPRESS APP SETUP =====
-// Create Express application instance
-const app = express();
 // Set port from environment variable or default to 5000
 const PORT = process.env.PORT || 5000;
 
-// ===== MIDDLEWARE CONFIGURATION =====
 // Enable CORS (Cross-Origin Resource Sharing) to allow requests from frontend
 app.use(cors());
-// Parse JSON request bodies (for API endpoints that receive JSON data)
-app.use(express.json());
-// Serve static files from the 'public' directory (CSS, JS, images, etc.)
-app.use('/public', express.static(path.join(__dirname, 'public')));
+
+// Serve static files from backend/public directory
+app.use('/public', express.static(path.join(__dirname, '../backend/public')));
 
 // ===== SESSION CONFIGURATION =====
 // Configure session management for user authentication state
@@ -262,46 +252,45 @@ app.get('/auth/test', (req, res) => {
 
 // Load songs data
 console.log('Loading server...');
-const songsPath = path.join(__dirname, 'data', 'songs.json');
+const songsPath = path.join(__dirname, '../backend/data/songs.json');
 let songs = [];
 if (fs.existsSync(songsPath)) {
   songs = JSON.parse(fs.readFileSync(songsPath, 'utf-8'));
 }
-
-
-
-// Example: Top 50 Global playlist ID
-
 
 // Music Search API endpoints
 app.get('/api/music/search', async (req, res) => {
     try {
         const { q, limit = 10 } = req.query;
         
-        if (!q || q.trim().length < 2) {
-            return res.json({ suggestions: [] });
+        if (!q || q.trim().length === 0) {
+            return res.status(400).json({ error: 'Search query is required' });
         }
         
-        const results = await mongoService.searchSongs(q.trim(), parseInt(limit));
-        const suggestions = results.map(song => ({
-            title: song.title,
-            artist: song.artist,
-            year: song.year,
-            genre: song.genre,
-            popularity: song.popularity
-        }));
+        const { genre, artist } = req.query;
+        console.log(`Searching MongoDB for: "${q}" with filters - genre: ${genre || 'none'}, artist: ${artist || 'none'}, limit: ${limit}`);
         
-        res.json({ suggestions });
+        // Build filters object
+        const filters = {};
+        if (genre) filters.genre = genre;
+        if (artist) filters.artist = artist;
+        
+        // Search for songs in MongoDB with filters
+        const songs = await mongoService.advancedSearch({
+            ...filters,
+            title: q // Use the search query as title filter
+        }, parseInt(limit));
+        
+        console.log(`Found ${songs.length} songs matching "${q}" with applied filters`);
+        
+        res.json(songs);
     } catch (error) {
-        console.error('Music search error:', error);
-        res.status(500).json({ error: 'Search failed' });
+        console.error('Search error:', error);
+        res.status(500).json({ error: 'Failed to search database' });
     }
 });
 
-
-
-
-
+// Get all genres
 app.get('/api/music/genres', async (req, res) => {
     try {
         const genres = await mongoService.getAllGenres();
@@ -312,6 +301,7 @@ app.get('/api/music/genres', async (req, res) => {
     }
 });
 
+// Get all artists
 app.get('/api/music/artists', async (req, res) => {
     try {
         const artists = await mongoService.getAllArtists();
@@ -321,8 +311,6 @@ app.get('/api/music/artists', async (req, res) => {
         res.status(500).json({ error: 'Failed to get artists' });
     }
 });
-
-
 
 // Search endpoint for MongoDB database
 app.get('/api/search', async (req, res) => {
@@ -521,160 +509,6 @@ app.post('/api/create-dynamic-playlist', async (req, res) => {
   } catch (error) {
     console.error('Create playlist error:', error);
     res.status(500).json({ error: 'Failed to create playlist' });
-  }
-});
-
-app.post('/api/create-playlist-with-song', async (req, res) => {
-  try {
-    console.log('Creating playlist with song...');
-    const { genre, yearFrom, yearTo, playlistName = 'Dynamic Music Game Playlist' } = req.body;
-    console.log('Filters:', { genre, yearFrom, yearTo, playlistName });
-    
-    // Get random song from MongoDB
-    console.log('Getting random song from MongoDB...');
-    const song = await mongoService.getRandomSong({
-      genre: genre || null,
-      yearFrom: yearFrom || null,
-      yearTo: yearTo || null
-    });
-    
-    console.log('Random song found:', song);
-    
-    if (!song) {
-      return res.status(404).json({ error: 'No songs found with the specified filters' });
-    }
-    
-    // Use user's access token from Authorization header
-    const authHeader = req.headers.authorization;
-    let token = null;
-    
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    } else {
-      // Fallback to session token
-      token = req.session.access_token;
-    }
-    
-    console.log('Got user access token:', token ? 'Yes' : 'No');
-    
-    if (!token) {
-      return res.status(401).json({ error: 'User not authenticated with Spotify. Please log in first.' });
-    }
-    
-    // Search for the song on Spotify using improved search strategy
-    let track;
-    try {
-      console.log('Searching for song on Spotify:', song.title, 'by', song.artist);
-      track = await searchSpotifyTrack(song, token);
-      console.log('Found track on Spotify:', track.name, 'by', track.artists.map(a => a.name).join(', '));
-    } catch (error) {
-      console.error('Spotify search error:', error);
-      return res.status(404).json({ 
-        error: 'Song not found on Spotify', 
-        originalSong: song,
-        searchError: error.message
-      });
-    }
-    const trackUri = track.uri;
-    
-    // Get current user
-    console.log('Fetching user profile from Spotify...');
-    const userResponse = await fetch('https://api.spotify.com/v1/me', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    
-    console.log('User profile response status:', userResponse.status);
-    
-    if (!userResponse.ok) {
-      let errorData;
-      try {
-        errorData = await userResponse.json();
-      } catch (e) {
-        errorData = { message: 'Could not parse error response' };
-      }
-      console.error('Error getting user profile:', errorData);
-      console.error('Response status:', userResponse.status);
-      console.error('Response headers:', Object.fromEntries(userResponse.headers.entries()));
-      
-      return res.status(userResponse.status).json({ 
-        error: 'Failed to get user profile', 
-        details: errorData,
-        status: userResponse.status
-      });
-    }
-    
-    const userData = await userResponse.json();
-    const userId = userData.id;
-    console.log('User ID:', userId);
-    
-    // Create playlist with the song
-    const createResponse = await fetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        name: playlistName,
-        description: `Auto-generated playlist for music guessing game - ${song.title} by ${song.artist}`,
-        public: false
-      })
-    });
-    
-    if (!createResponse.ok) {
-      const errorData = await createResponse.json();
-      return res.status(createResponse.status).json({ 
-        error: 'Failed to create playlist', 
-        details: errorData 
-      });
-    }
-    
-    const playlistData = await createResponse.json();
-    const playlistId = playlistData.id;
-    
-    // Add the track to the playlist
-    const addTrackResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        uris: [trackUri]
-      })
-    });
-    
-    if (!addTrackResponse.ok) {
-      const errorData = await addTrackResponse.json();
-      return res.status(addTrackResponse.status).json({ 
-        error: 'Failed to add track to playlist', 
-        details: errorData 
-      });
-    }
-    
-    res.json({
-      success: true,
-      playlist: {
-        id: playlistId,
-        name: playlistData.name,
-        description: playlistData.description,
-        uri: playlistData.uri
-      },
-      track: {
-        id: track.id,
-        title: track.name,
-        artist: track.artists.map(a => a.name).join(', '),
-        album: track.album.name,
-        uri: track.uri,
-        preview_url: track.preview_url
-      },
-      originalSong: song,
-      message: 'Playlist created successfully with song from database'
-    });
-    
-  } catch (error) {
-    console.error('Create playlist with song error:', error);
-    res.status(500).json({ error: 'Failed to create playlist with song' });
   }
 });
 
@@ -918,8 +752,5 @@ app.post('/api/add-specific-song-to-playlist', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-}).on('error', (error) => {
-  console.error('Server error:', error);
-});
+// Export for Vercel
+module.exports = app; 
