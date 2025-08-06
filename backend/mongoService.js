@@ -11,7 +11,7 @@ class MongoService {
         this.db = null;
         this.collection = null;
     }
-
+  
     async connect() {
         try {
             if (!MONGODB_URI) {
