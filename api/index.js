@@ -289,9 +289,9 @@ app.get('/api/auth/callback', async (req, res) => {
   if (data.access_token) {
     req.session.access_token = data.access_token;
     req.session.refresh_token = data.refresh_token;
-    // Redirect to frontend with token in query (for demo, you can improve this later)
+    // Redirect to frontend with both access and refresh tokens for automatic login
     const frontendUrl = process.env.FRONTEND_URL || 'https://web-app-music-przybylektutorials-projects.vercel.app';
-    res.redirect(frontendUrl + '/?access_token=' + data.access_token);
+    res.redirect(frontendUrl + '/?access_token=' + data.access_token + '&refresh_token=' + data.refresh_token);
   } else {
     res.status(400).json(data);
   }

@@ -35,6 +35,10 @@
     {
       "src": "api/env-check.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/auth/refresh.js",
+      "use": "@vercel/node"
     }
   ],
   "rewrites": [
@@ -49,6 +53,10 @@
     {
       "source": "/api/env-check",
       "destination": "/api/env-check.js"
+    },
+    {
+      "source": "/api/auth/refresh",
+      "destination": "/api/auth/refresh.js"
     },
     {
       "source": "/api/music/genres",

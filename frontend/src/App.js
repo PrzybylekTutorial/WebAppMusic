@@ -64,12 +64,132 @@ function App() {
   const [useDynamicPlaylist, setUseDynamicPlaylist] = useState(false);
   // Set of track URIs that have been played in current session (prevents duplicates)
   const [playedSongs, setPlayedSongs] = useState(new Set());
+  // Boolean to remember user login
+  const [rememberMe, setRememberMe] = useState(false);
+  // Loading state for authentication
+  const [authLoading, setAuthLoading] = useState(false);
 
   // ===== URL PARAMETER EXTRACTION =====
   // Extract URL parameters from the current page (used for OAuth callback)
   const urlParams = new URLSearchParams(window.location.search);
   // Get the Spotify access token from URL parameters (passed after OAuth authentication)
-  const accessToken = urlParams.get('access_token');
+  const urlAccessToken = urlParams.get('access_token');
+  const urlRefreshToken = urlParams.get('refresh_token');
+
+  // ===== TOKEN MANAGEMENT =====
+  // Get stored tokens from localStorage
+  const getStoredTokens = () => {
+    try {
+      const stored = localStorage.getItem('spotify_tokens');
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      console.error('Error reading stored tokens:', error);
+      return null;
+    }
+  };
+
+  // Store tokens in localStorage
+  const storeTokens = (accessToken, refreshToken, rememberMe) => {
+    try {
+      if (rememberMe && accessToken && refreshToken) {
+        const tokens = {
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('spotify_tokens', JSON.stringify(tokens));
+      } else {
+        localStorage.removeItem('spotify_tokens');
+      }
+    } catch (error) {
+      console.error('Error storing tokens:', error);
+    }
+  };
+
+  // Check if token is expired (Spotify tokens expire in 1 hour)
+  const isTokenExpired = (timestamp) => {
+    const TOKEN_LIFETIME = 3600000; // 1 hour in milliseconds
+    return Date.now() - timestamp > TOKEN_LIFETIME;
+  };
+
+  // Refresh access token using refresh token
+  const refreshAccessToken = async (refreshToken) => {
+    try {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh_token: refreshToken })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.access_token;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      return null;
+    }
+  };
+
+  // Get valid access token (from URL, localStorage, or refresh)
+  const [accessToken, setAccessToken] = useState(null);
+
+  // Initialize authentication
+  useEffect(() => {
+    const initializeAuth = async () => {
+      setAuthLoading(true);
+      
+      try {
+        // First, check if we have a token from URL (new login)
+        if (urlAccessToken && urlRefreshToken) {
+          console.log('New login detected, storing tokens...');
+          setAccessToken(urlAccessToken);
+          storeTokens(urlAccessToken, urlRefreshToken, true);
+          
+          // Clear URL parameters
+          window.history.replaceState({}, document.title, window.location.pathname);
+          return;
+        }
+
+        // Check for stored tokens
+        const storedTokens = getStoredTokens();
+        if (storedTokens && !isTokenExpired(storedTokens.timestamp)) {
+          console.log('Using stored valid token');
+          setAccessToken(storedTokens.access_token);
+          setRememberMe(true);
+          return;
+        }
+
+        // Try to refresh token if expired
+        if (storedTokens && storedTokens.refresh_token) {
+          console.log('Token expired, attempting refresh...');
+          const newAccessToken = await refreshAccessToken(storedTokens.refresh_token);
+          if (newAccessToken) {
+            console.log('Token refreshed successfully');
+            setAccessToken(newAccessToken);
+            storeTokens(newAccessToken, storedTokens.refresh_token, true);
+            setRememberMe(true);
+            return;
+          }
+        }
+
+        // No valid token found
+        console.log('No valid token found, user needs to login');
+        setAccessToken(null);
+        
+      } catch (error) {
+        console.error('Error initializing authentication:', error);
+        setAccessToken(null);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, [urlAccessToken, urlRefreshToken]);
 
   // ===== HELPER FUNCTIONS =====
   // Helper function to get a random song that hasn't been played yet in current session
@@ -739,36 +859,54 @@ function App() {
 
         {/* Login/Logout Buttons */}
         <div style={{ textAlign: 'center', marginBottom: 30 }}>
-          {!accessToken ? (
-            <a href="/api/auth/login" style={{ textDecoration: 'none' }}>
-              <button style={{
-                padding: '15px 30px',
-                fontSize: '1.2rem',
-                backgroundColor: '#1DB954',
-                color: 'white',
-                border: 'none',
-                borderRadius: 50,
-                cursor: 'pointer',
-                boxShadow: '0 8px 16px rgba(29, 185, 84, 0.3)',
-                transition: 'all 0.3s ease',
-                fontWeight: 'bold'
-              }} onMouseOver={(e) => {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 12px 20px rgba(29, 185, 84, 0.4)';
-              }} onMouseOut={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 8px 16px rgba(29, 185, 84, 0.3)';
-              }}>
-                🎧 Connect with Spotify
-              </button>
-            </a>
-          ) : (
-            <div style={{ display: 'flex', gap: 15, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <div style={{ color: '#666', fontSize: '1rem', display: 'flex', alignItems: 'center' }}>
-                ✅ Connected to Spotify
-              </div>
-              <a href="/api/auth/logout" style={{ textDecoration: 'none' }}>
+          {authLoading ? (
+            <div style={{ color: '#666', fontSize: '1rem' }}>
+              🔄 Loading Spotify...
+            </div>
+          ) : !accessToken ? (
+            <div>
+              <a href="/api/auth/login" style={{ textDecoration: 'none' }}>
                 <button style={{
+                  padding: '15px 30px',
+                  fontSize: '1.2rem',
+                  backgroundColor: '#1DB954',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 50,
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 16px rgba(29, 185, 84, 0.3)',
+                  transition: 'all 0.3s ease',
+                  fontWeight: 'bold'
+                }} onMouseOver={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 12px 20px rgba(29, 185, 84, 0.4)';
+                }} onMouseOut={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 8px 16px rgba(29, 185, 84, 0.3)';
+                }}>
+                  🎧 Connect with Spotify
+                </button>
+              </a>
+              <div style={{ marginTop: 10, fontSize: '0.9rem', color: '#666' }}>
+                💡 Tip: You'll stay logged in automatically after connecting!
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 15, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ color: '#666', fontSize: '1rem', display: 'flex', alignItems: 'center' }}>
+                ✅ Connected to Spotify {rememberMe && ' (Auto-login enabled)'}
+              </div>
+              <button 
+                onClick={() => {
+                  // Clear stored tokens
+                  localStorage.removeItem('spotify_tokens');
+                  // Clear current token
+                  setAccessToken(null);
+                  setRememberMe(false);
+                  // Clear URL parameters
+                  window.history.replaceState({}, document.title, window.location.pathname);
+                }}
+                style={{
                   padding: '10px 20px',
                   fontSize: '1rem',
                   backgroundColor: '#dc3545',
@@ -783,9 +921,8 @@ function App() {
                 }} onMouseOut={(e) => {
                   e.target.style.transform = 'translateY(0)';
                 }}>
-                  🚪 Logout & Re-authenticate
-                </button>
-              </a>
+                  🚪 Logout
+              </button>
             </div>
           )}
         </div>
