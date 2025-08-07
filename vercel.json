@@ -15,6 +15,26 @@
     {
       "src": "api/test.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/music-test.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/music/genres.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/music/artists.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/music/search.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/env-check.js",
+      "use": "@vercel/node"
     }
   ],
   "rewrites": [
@@ -23,12 +43,34 @@
       "destination": "/api/test.js"
     },
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.js"
+      "source": "/api/music-test",
+      "destination": "/api/music-test.js"
     },
     {
-      "source": "/(.*)",
-      "destination": "/frontend/$1"
+      "source": "/api/env-check",
+      "destination": "/api/env-check.js"
+    },
+    {
+      "source": "/api/music/genres",
+      "destination": "/api/music/genres.js"
+    },
+    {
+      "source": "/api/music/artists",
+      "destination": "/api/music/artists.js"
+    },
+    {
+      "source": "/api/music/search",
+      "destination": "/api/music/search.js"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/$1"
     }
   ],
   "env": {
