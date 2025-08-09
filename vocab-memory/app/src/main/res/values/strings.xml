@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">VocabMemory</string>
+    <string name="add_word">Dodaj słowo</string>
+    <string name="edit_word">Edytuj słowo</string>
+    <string name="delete">Usuń</string>
+    <string name="save">Zapisz</string>
+    <string name="cancel">Anuluj</string>
+    <string name="word">Słowo</string>
+    <string name="translation">Tłumaczenie</string>
+    <string name="example">Przykład (opcjonalnie)</string>
+    <string name="learn">Ucz się</string>
+    <string name="list">Lista</string>
+    <string name="import_export">Import/Eksport</string>
+    <string name="theme">Motyw</string>
+    <string name="widget_next">Następne</string>
+</resources>
