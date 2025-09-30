@@ -176,6 +176,28 @@ function App() {
           }
         }
 
+        // Try auto-login with app account
+        console.log('Attempting auto-login with app account...');
+        try {
+          const autoLoginResponse = await fetch('/api/auth/auto-login');
+          if (autoLoginResponse.ok) {
+            const autoLoginData = await autoLoginResponse.json();
+            if (autoLoginData.access_token) {
+              console.log('Auto-login successful:', autoLoginData.message);
+              setAccessToken(autoLoginData.access_token);
+              setRememberMe(true);
+              return;
+            }
+          } else {
+            const errorData = await autoLoginResponse.json();
+            if (errorData.setup_required) {
+              console.log('Auto-login setup required:', errorData.error);
+            }
+          }
+        } catch (autoLoginError) {
+          console.log('Auto-login failed, falling back to manual login:', autoLoginError.message);
+        }
+
         // No valid token found
         console.log('No valid token found, user needs to login');
         setAccessToken(null);
@@ -887,8 +909,32 @@ function App() {
                   🎧 Connect with Spotify
                 </button>
               </a>
-              <div style={{ marginTop: 10, fontSize: '0.9rem', color: '#666' }}>
-                💡 Tip: You'll stay logged in automatically after connecting!
+              <div style={{ marginTop: 10, fontSize: '0.9rem', color: '#666', maxWidth: '400px', margin: '10px auto 0' }}>
+                💡 <strong>One-time setup:</strong> Connect once and you'll stay logged in automatically on this device!
+              </div>
+              <div style={{ marginTop: 5, fontSize: '0.8rem', color: '#888', maxWidth: '400px', margin: '5px auto 0' }}>
+                🔒 Secure OAuth login - your credentials are never stored
+              </div>
+              
+              {/* Authentication Info Box */}
+              <div style={{ 
+                marginTop: 20, 
+                padding: 15, 
+                backgroundColor: 'rgba(29, 185, 84, 0.1)', 
+                borderRadius: 10, 
+                border: '1px solid rgba(29, 185, 84, 0.3)',
+                maxWidth: '500px',
+                margin: '20px auto 0'
+              }}>
+                <div style={{ fontSize: '0.9rem', color: '#333', textAlign: 'left' }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: 8 }}>🔐 How Authentication Works:</div>
+                  <ul style={{ margin: 0, paddingLeft: 20, fontSize: '0.85rem', lineHeight: 1.4 }}>
+                    <li><strong>First time:</strong> Click "Connect with Spotify" to authorize this app</li>
+                    <li><strong>Automatic login:</strong> On future visits, you'll be logged in automatically</li>
+                    <li><strong>New device/browser:</strong> You'll need to connect once on each new device</li>
+                    <li><strong>Security:</strong> Only access tokens are stored locally, never your password</li>
+                  </ul>
+                </div>
               </div>
             </div>
           ) : (

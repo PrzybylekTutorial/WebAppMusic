@@ -13,14 +13,6 @@
       "use": "@vercel/node"
     },
     {
-      "src": "api/test.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/music-test.js",
-      "use": "@vercel/node"
-    },
-    {
       "src": "api/music/genres.js",
       "use": "@vercel/node"
     },
@@ -33,30 +25,22 @@
       "use": "@vercel/node"
     },
     {
-      "src": "api/env-check.js",
+      "src": "api/auth/refresh.js",
       "use": "@vercel/node"
     },
     {
-      "src": "api/auth/refresh.js",
+      "src": "api/auth/auto-login.js",
       "use": "@vercel/node"
     }
   ],
   "rewrites": [
     {
-      "source": "/api/test-simple",
-      "destination": "/api/test.js"
-    },
-    {
-      "source": "/api/music-test",
-      "destination": "/api/music-test.js"
-    },
-    {
-      "source": "/api/env-check",
-      "destination": "/api/env-check.js"
-    },
-    {
       "source": "/api/auth/refresh",
       "destination": "/api/auth/refresh.js"
+    },
+    {
+      "source": "/api/auth/auto-login",
+      "destination": "/api/auth/auto-login.js"
     },
     {
       "source": "/api/music/genres",
