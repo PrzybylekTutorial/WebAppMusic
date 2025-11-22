@@ -11,49 +11,9 @@
     {
       "src": "api/index.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "api/music/genres.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/music/artists.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/music/search.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/auth/refresh.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/auth/auto-login.js",
-      "use": "@vercel/node"
     }
   ],
   "rewrites": [
-    {
-      "source": "/api/auth/refresh",
-      "destination": "/api/auth/refresh.js"
-    },
-    {
-      "source": "/api/auth/auto-login",
-      "destination": "/api/auth/auto-login.js"
-    },
-    {
-      "source": "/api/music/genres",
-      "destination": "/api/music/genres.js"
-    },
-    {
-      "source": "/api/music/artists",
-      "destination": "/api/music/artists.js"
-    },
-    {
-      "source": "/api/music/search",
-      "destination": "/api/music/search.js"
-    },
     {
       "source": "/api/(.*)",
       "destination": "/api/index.js"
@@ -67,4 +27,4 @@
     "NODE_ENV": "production",
     "CI": "false"
   }
-} 
+}

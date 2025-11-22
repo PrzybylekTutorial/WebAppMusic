@@ -1,194 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-
+import { getApiUrl } from './config';
+import './DynamicPlaylistManager.css';
 
 // Constants
 const API_BASE_URL = '/api';
 const SPOTIFY_API_URL = 'https://api.spotify.com/v1';
-
-// Styles
-const styles = {
-  container: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    padding: 25,
-    borderRadius: 15,
-    marginBottom: 20,
-    boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-    border: '2px solid #1DB954'
-  },
-  title: {
-    textAlign: 'center',
-    margin: '0 0 20px 0',
-    color: '#333'
-  },
-  buttonContainer: {
-    textAlign: 'center',
-    marginBottom: 20
-  },
-  buttonRow: {
-    display: 'flex',
-    gap: 15,
-    justifyContent: 'center',
-    flexWrap: 'wrap'
-  },
-  primaryButton: {
-    padding: '15px 30px',
-    fontSize: '1.1rem',
-    backgroundColor: '#1DB954',
-    color: 'white',
-    border: 'none',
-    borderRadius: 25,
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    transition: 'all 0.3s ease'
-  },
-  secondaryButton: {
-    padding: '15px 30px',
-    fontSize: '1.1rem',
-    backgroundColor: '#ffc107',
-    color: 'black',
-    border: 'none',
-    borderRadius: 25,
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    transition: 'all 0.3s ease'
-  },
-  disabledButton: {
-    backgroundColor: '#6c757d',
-    cursor: 'not-allowed'
-  },
-  sectionTitle: {
-    margin: '0 0 15px 0',
-    color: '#333'
-  },
-  filterGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: 15
-  },
-  select: {
-    padding: '10px 15px',
-    border: '2px solid #ddd',
-    borderRadius: 10,
-    fontSize: '1rem',
-    backgroundColor: 'white',
-    cursor: 'pointer'
-  },
-  input: {
-    padding: '10px 15px',
-    border: '2px solid #ddd',
-    borderRadius: 10,
-    fontSize: '1rem'
-  },
-  searchInput: {
-    width: '100%',
-    padding: '12px 15px',
-    border: '2px solid #ddd',
-    borderRadius: 10,
-    fontSize: '1rem',
-    marginBottom: 10
-  },
-  smallSelect: {
-    padding: '8px 12px',
-    border: '2px solid #ddd',
-    borderRadius: 8,
-    fontSize: '0.9rem',
-    backgroundColor: 'white',
-    cursor: 'pointer'
-  },
-  clearButton: {
-    padding: '8px 12px',
-    border: '2px solid #ddd',
-    borderRadius: 8,
-    fontSize: '0.9rem',
-    backgroundColor: '#f8f9fa',
-    color: '#666',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease'
-  },
-  addButton: {
-    padding: '12px 25px',
-    fontSize: '1rem',
-    backgroundColor: '#007bff',
-    color: 'white',
-    border: 'none',
-    borderRadius: 20,
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    transition: 'all 0.3s ease'
-  },
-  message: {
-    padding: 15,
-    marginBottom: 20,
-    borderRadius: 10,
-    textAlign: 'center',
-    fontWeight: 'bold'
-  },
-  successMessage: {
-    backgroundColor: 'rgba(40, 167, 69, 0.1)',
-    border: '2px solid #28a745',
-    color: '#28a745'
-  },
-  errorMessage: {
-    backgroundColor: 'rgba(220, 53, 69, 0.1)',
-    border: '2px solid #dc3545',
-    color: '#dc3545'
-  },
-  playlistHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-    cursor: 'pointer'
-  },
-  toggleButton: {
-    padding: '8px 12px',
-    backgroundColor: '#007bff',
-    color: 'white',
-    border: 'none',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontSize: '0.9rem',
-    fontWeight: 'bold',
-    transition: 'all 0.2s ease'
-  },
-  tracksContainer: {
-    maxHeight: 300,
-    overflowY: 'auto',
-    border: '1px solid #ddd',
-    borderRadius: 8,
-    padding: 10,
-    backgroundColor: 'rgba(248, 249, 250, 0.8)'
-  },
-  trackItem: {
-    padding: 10,
-    marginBottom: 5,
-    backgroundColor: 'rgba(29, 185, 84, 0.1)',
-    borderRadius: 8,
-    border: '1px solid #1DB954',
-    transition: 'all 0.2s ease'
-  },
-  searchResultsContainer: {
-    maxHeight: 300,
-    overflowY: 'auto',
-    border: '1px solid #ddd',
-    borderRadius: 10
-  },
-  searchResultItem: {
-    padding: 12,
-    borderBottom: '1px solid #eee',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s'
-  },
-  activeFilters: {
-    padding: '8px 12px',
-    backgroundColor: '#e3f2fd',
-    border: '1px solid #2196f3',
-    borderRadius: 8,
-    marginBottom: 10,
-    fontSize: '0.9rem',
-    color: '#1976d2'
-  }
-};
 
 // Utility functions
 const validateToken = async (token) => {
@@ -204,7 +20,6 @@ const handleApiError = async (response) => {
     const errorData = await response.json();
     errorMessage = errorData.error || 'API request failed';
   } catch (e) {
-    // If JSON parsing fails, try to get text
     try {
       const text = await response.text();
       errorMessage = `Server error: ${response.status} - ${text}`;
@@ -216,25 +31,8 @@ const handleApiError = async (response) => {
 };
 
 // Reusable components
-const Button = ({ children, onClick, disabled, style, ...props }) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    style={{
-      ...style,
-      ...(disabled && styles.disabledButton)
-    }}
-    {...props}
-  >
-    {children}
-  </button>
-);
-
 const Message = ({ message, type = 'success' }) => (
-  <div style={{
-    ...styles.message,
-    ...(type === 'error' ? styles.errorMessage : styles.successMessage)
-  }}>
+  <div className={`message-box ${type === 'error' ? 'message-error' : 'message-success'}`}>
     {message}
   </div>
 );
@@ -261,7 +59,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
     if (!currentPlaylistId || !accessToken) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/playlist-tracks/${currentPlaylistId}`, {
+      const response = await fetch(getApiUrl(`/api/playlist-tracks/${currentPlaylistId}`), {
         headers: { 'Authorization': `Bearer ${accessToken}` }
       });
       
@@ -297,7 +95,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
         playlistName: 'Dynamic Music Game Playlist'
       };
 
-      const response = await fetch(`${API_BASE_URL}/create-dynamic-playlist`, {
+      const response = await fetch(getApiUrl('/api/create-dynamic-playlist'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -337,7 +135,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
     setMessage('Adding random song from database...');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/add-random-song-to-playlist`, {
+      const response = await fetch(getApiUrl('/api/add-random-song-to-playlist'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -381,7 +179,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
       if (searchFilters.genre) params.append('genre', searchFilters.genre);
       if (searchFilters.artist) params.append('artist', searchFilters.artist);
 
-      const response = await fetch(`${API_BASE_URL}/search?${params.toString()}`);
+      const response = await fetch(getApiUrl(`/api/search?${params.toString()}`));
       
       if (!response.ok) {
         throw new Error('Search failed');
@@ -407,7 +205,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
     setMessage(`Adding "${song.title}" by ${song.artist}...`);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/add-specific-song-to-playlist`, {
+      const response = await fetch(getApiUrl('/api/add-specific-song-to-playlist'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -436,7 +234,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
   const loadAvailableGenres = useCallback(async () => {
     setIsLoadingGenres(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/music/genres`);
+      const response = await fetch(getApiUrl('/api/music/genres'));
       
       if (!response.ok) {
         throw new Error('Failed to load genres');
@@ -464,7 +262,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
   const loadAvailableArtists = useCallback(async () => {
     setIsLoadingArtists(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/music/artists`);
+      const response = await fetch(getApiUrl('/api/music/artists'));
       
       if (!response.ok) {
         throw new Error('Failed to load artists');
@@ -522,27 +320,27 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
   }, [loadAvailableGenres, loadAvailableArtists]);
 
   return (
-    <div style={styles.container}>
-      <h3 style={styles.title}>🎵 Dynamic Playlist Manager</h3>
+    <div className="playlist-manager-container">
+      <h3 className="playlist-manager-title">🎵 Dynamic Playlist Manager</h3>
 
       {/* Create Playlist Buttons */}
-      <div style={styles.buttonContainer}>
-        <div style={styles.buttonRow}>
-          <Button
+      <div className="button-container">
+        <div className="button-row">
+          <button
+            className="btn btn-primary"
             onClick={createDynamicPlaylist}
             disabled={isLoading}
-            style={styles.primaryButton}
           >
             {isLoading ? '🔄 Creating...' : '🎲 Create New Playlist'}
-          </Button>
+          </button>
           
           {currentPlaylistId && (
-            <Button
+            <button
+              className="btn btn-secondary"
               onClick={resetPlaylist}
-              style={styles.secondaryButton}
             >
               🆕 Start Fresh
-            </Button>
+            </button>
           )}
         </div>
       </div>
@@ -550,12 +348,12 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
       {/* Filters */}
       {currentPlaylistId && (
         <div style={{ marginBottom: 20 }}>
-          <h4 style={styles.sectionTitle}>🎯 Song Filters</h4>
-          <div style={styles.filterGrid}>
+          <h4 className="section-title">🎯 Song Filters</h4>
+          <div className="filter-grid">
             <select
+              className="form-select"
               value={filters.genre}
               onChange={(e) => setFilters(prev => ({ ...prev, genre: e.target.value }))}
-              style={styles.select}
             >
               <option value="">🎵 Select Genre (All Genres)</option>
               {isLoadingGenres ? (
@@ -567,18 +365,18 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
               )}
             </select>
             <input
+              className="form-input"
               type="number"
               placeholder="Year From (e.g., 1980)"
               value={filters.yearFrom}
               onChange={(e) => setFilters(prev => ({ ...prev, yearFrom: e.target.value }))}
-              style={styles.input}
             />
             <input
+              className="form-input"
               type="number"
               placeholder="Year To (e.g., 2000)"
               value={filters.yearTo}
               onChange={(e) => setFilters(prev => ({ ...prev, yearTo: e.target.value }))}
-              style={styles.input}
             />
           </div>
         </div>
@@ -587,15 +385,15 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
       {/* Search Section */}
       {currentPlaylistId && (
         <div style={{ marginBottom: 20 }}>
-          <h4 style={styles.sectionTitle}>🔍 Search & Add Specific Songs</h4>
+          <h4 className="section-title">🔍 Search & Add Specific Songs</h4>
           
           {/* Search Filters */}
           <div style={{ marginBottom: 15 }}>
-            <div style={styles.filterGrid}>
+            <div className="filter-grid">
               <select
+                className="form-select-small"
                 value={searchFilters.genre}
                 onChange={(e) => handleSearchFilterChange('genre', e.target.value)}
-                style={styles.smallSelect}
               >
                 <option value="">🎵 All Genres</option>
                 {isLoadingGenres ? (
@@ -608,9 +406,9 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
               </select>
               
               <select
+                className="form-select-small"
                 value={searchFilters.artist}
                 onChange={(e) => handleSearchFilterChange('artist', e.target.value)}
-                style={styles.smallSelect}
               >
                 <option value="">🎤 All Artists</option>
                 {isLoadingArtists ? (
@@ -622,19 +420,18 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
                 )}
               </select>
               
-              <Button
+              <button
+                className="btn-clear"
                 onClick={clearSearchFilters}
-                style={styles.clearButton}
-                onMouseOver={(e) => e.target.style.backgroundColor = '#e9ecef'}
-                onMouseOut={(e) => e.target.style.backgroundColor = '#f8f9fa'}
               >
                 🗑️ Clear Filters
-              </Button>
+              </button>
             </div>
           </div>
           
           <div style={{ marginBottom: 15 }}>
             <input
+              className="search-input"
               type="text"
               placeholder="Search for songs by title, artist, or genre..."
               value={searchQuery}
@@ -646,7 +443,6 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
                   setSearchResults([]);
                 }
               }}
-              style={styles.searchInput}
             />
             {isSearching && (
               <div style={{ textAlign: 'center', color: '#666', fontSize: '0.9rem' }}>
@@ -656,7 +452,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
             
             {/* Active Filters Indicator */}
             {(searchFilters.genre || searchFilters.artist) && (
-              <div style={styles.activeFilters}>
+              <div className="active-filters">
                 <strong>Active Filters:</strong>
                 {searchFilters.genre && <span style={{ marginLeft: 8 }}>🎵 {searchFilters.genre}</span>}
                 {searchFilters.artist && <span style={{ marginLeft: 8 }}>🎤 {searchFilters.artist}</span>}
@@ -666,16 +462,11 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
           
           {/* Search Results */}
           {searchResults.length > 0 && (
-            <div style={styles.searchResultsContainer}>
+            <div className="search-results-container">
               {searchResults.map((song, index) => (
                 <div
                   key={song._id || index}
-                  style={{
-                    ...styles.searchResultItem,
-                    borderBottom: index < searchResults.length - 1 ? '1px solid #eee' : 'none'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f8f9fa'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                  className="search-result-item"
                   onClick={() => addSpecificSongToPlaylist(song)}
                 >
                   <div style={{ fontWeight: 'bold', color: '#333', marginBottom: 4 }}>
@@ -696,14 +487,14 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
 
       {/* Add More Songs Button */}
       {currentPlaylistId && (
-        <div style={styles.buttonContainer}>
-          <Button
+        <div className="button-container">
+          <button
+            className="btn-add"
             onClick={addRandomSongFromDatabase}
             disabled={isLoading}
-            style={styles.addButton}
           >
             {isLoading ? '🔄 Adding...' : '➕ Add More Songs to Playlist'}
-          </Button>
+          </button>
         </div>
       )}
 
@@ -718,32 +509,23 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
       {/* Playlist Tracks Display */}
       {playlistTracks.length > 0 && (
         <div>
-          <div style={styles.playlistHeader} onClick={() => setShowPlaylistTracks(!showPlaylistTracks)}>
+          <div className="playlist-header" onClick={() => setShowPlaylistTracks(!showPlaylistTracks)}>
             <h4 style={{ margin: 0, color: '#333' }}>
               📋 Playlist Tracks ({playlistTracks.length})
             </h4>
-            <Button
-              style={styles.toggleButton}
-              onMouseOver={(e) => e.target.style.backgroundColor = '#0056b3'}
-              onMouseOut={(e) => e.target.style.backgroundColor = '#007bff'}
-            >
+            <button className="btn-toggle">
               {showPlaylistTracks ? '👁️ Hide Tracks' : '👁️ Show Tracks'}
-            </Button>
+            </button>
           </div>
           
           {showPlaylistTracks && (
-            <div style={styles.tracksContainer}>
+            <div className="tracks-container">
               {playlistTracks.map((track, index) => (
-                <div
-                  key={track.id}
-                  style={styles.trackItem}
-                  onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(29, 185, 84, 0.2)'}
-                  onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(29, 185, 84, 0.1)'}
-                >
-                  <div style={{ fontWeight: 'bold', color: '#333' }}>
+                <div key={track.id} className="track-item">
+                  <div className="track-item-title">
                     {index + 1}. {track.title}
                   </div>
-                  <div style={{ color: '#666', fontSize: '0.9rem' }}>
+                  <div className="track-item-artist">
                     {track.artist} • {track.album}
                   </div>
                 </div>
@@ -756,4 +538,4 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
   );
 };
 
-export default DynamicPlaylistManager; 
+export default DynamicPlaylistManager;

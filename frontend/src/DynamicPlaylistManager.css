@@ -1,0 +1,238 @@
+.playlist-manager-container {
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 25px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  border: 2px solid #1DB954;
+}
+
+.playlist-manager-title {
+  text-align: center;
+  margin: 0 0 20px 0;
+  color: #333;
+}
+
+.button-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.button-row {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.btn:disabled {
+  background-color: #6c757d !important;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: #1DB954;
+  color: white;
+}
+
+.btn-secondary {
+  background-color: #ffc107;
+  color: black;
+}
+
+.section-title {
+  margin: 0 0 15px 0;
+  color: #333;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.form-select {
+  padding: 10px 15px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  font-size: 1rem;
+  background-color: white;
+  cursor: pointer;
+}
+
+.form-input {
+  padding: 10px 15px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  font-size: 1rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  font-size: 1rem;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.form-select-small {
+  padding: 8px 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background-color: white;
+  cursor: pointer;
+}
+
+.btn-clear {
+  padding: 8px 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background-color: #f8f9fa;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-clear:hover {
+  background-color: #e9ecef;
+}
+
+.btn-add {
+  padding: 12px 25px;
+  font-size: 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.btn-add:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.message-box {
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.message-success {
+  background-color: rgba(40, 167, 69, 0.1);
+  border: 2px solid #28a745;
+  color: #28a745;
+}
+
+.message-error {
+  background-color: rgba(220, 53, 69, 0.1);
+  border: 2px solid #dc3545;
+  color: #dc3545;
+}
+
+.playlist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  cursor: pointer;
+}
+
+.btn-toggle {
+  padding: 8px 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.btn-toggle:hover {
+  background-color: #0056b3;
+}
+
+.tracks-container {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: rgba(248, 249, 250, 0.8);
+}
+
+.track-item {
+  padding: 10px;
+  margin-bottom: 5px;
+  background-color: rgba(29, 185, 84, 0.1);
+  border-radius: 8px;
+  border: 1px solid #1DB954;
+  transition: all 0.2s ease;
+}
+
+.track-item:hover {
+  background-color: rgba(29, 185, 84, 0.2);
+}
+
+.track-item-title {
+  font-weight: bold;
+  color: #333;
+}
+
+.track-item-artist {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.search-results-container {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+
+.search-result-item {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background-color: #f8f9fa;
+}
+
+.active-filters {
+  padding: 8px 12px;
+  background-color: #e3f2fd;
+  border: 1px solid #2196f3;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  color: #1976d2;
+}
+
