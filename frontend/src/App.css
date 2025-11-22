@@ -169,11 +169,20 @@
   position: relative;
   max-width: 500px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .guess-form {
   display: flex;
   gap: 10px;
+  width: 100%;
+  align-items: stretch;
+}
+
+.guess-input-container {
+  position: relative;
+  flex: 1;
+  min-width: 0; /* Prevents flex item from overflowing */
 }
 
 .guess-input {
@@ -383,21 +392,26 @@
     padding: 20px;
   }
   
+  /* Ensure input and button stay on one line or wrap gracefully without overflow */
   .guess-form {
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap; /* Keep on one line if possible */
   }
   
   .guess-input-wrapper {
-    max-width: 100%;
     width: 100%;
+  }
+  
+  .guess-input {
+    padding: 12px 15px; /* Slightly smaller padding on mobile */
+    font-size: 1rem;
   }
   
   .guess-submit-btn {
     width: auto;
     padding: 0 20px;
+    flex-shrink: 0; /* Don't squash the button */
     margin-top: 0;
-    flex-shrink: 0;
   }
   
   .controls-row {

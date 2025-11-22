@@ -5,7 +5,7 @@ const GuessInput = ({ onGuess, userGuess, setUserGuess, suggestions, showSuggest
   return (
     <div className="guess-input-wrapper">
       <form onSubmit={onGuess} className="guess-form">
-        <div style={{ position: 'relative', width: '100%' }}>
+        <div className="guess-input-container">
           <input
             type="text"
             value={userGuess}
