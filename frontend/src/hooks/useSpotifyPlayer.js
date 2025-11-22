@@ -105,13 +105,6 @@ export const useSpotifyPlayer = (accessToken) => {
         // Calculate estimated progress: Last confirmed position + time elapsed since then
         const estimatedProgress = position + (now - time);
         
-        // Only update state if significantly changed (e.g. every 100ms) or use css for animation
-        // But we need to drive the logic.
-        // Let's just rely on the fact that we are clamping in the UI
-        // and maybe update less frequently to save React renders?
-        // Actually, 60fps state update is fine in React 18 usually.
-        // But to be super smooth we might want to decouple visual from logic.
-        
         // Don't exceed duration
         const cappedProgress = duration > 0 ? Math.min(estimatedProgress, duration) : estimatedProgress;
         
@@ -131,9 +124,12 @@ export const useSpotifyPlayer = (accessToken) => {
     };
   }, [isPlaying, isPaused, duration]);
 
+  const [isActionPending, setIsActionPending] = useState(false);
+
   const handlePlay = async (uri, trackId) => {
-    if (!accessToken || !deviceId) return;
+    if (!accessToken || !deviceId || isActionPending) return;
     try {
+      setIsActionPending(true);
       // Optimistic update
       setIsPlaying(true);
       setIsPaused(false);
@@ -150,12 +146,15 @@ export const useSpotifyPlayer = (accessToken) => {
       setIsPlaying(false);
       setIsPaused(true);
       throw error;
+    } finally {
+      setTimeout(() => setIsActionPending(false), 250); // Small debounce
     }
   };
 
   const handlePause = async () => {
-    if (!accessToken || !deviceId) return;
+    if (!accessToken || !deviceId || isActionPending) return;
     try {
+      setIsActionPending(true);
       // Optimistic update
       setIsPaused(true);
       setIsPlaying(false);
@@ -166,12 +165,15 @@ export const useSpotifyPlayer = (accessToken) => {
       // Revert
       setIsPaused(false);
       setIsPlaying(true);
+    } finally {
+      setTimeout(() => setIsActionPending(false), 250);
     }
   };
 
   const handleResume = async () => {
-    if (!accessToken || !deviceId) return;
+    if (!accessToken || !deviceId || isActionPending) return;
     try {
+      setIsActionPending(true);
       // Optimistic update
       setIsPaused(false);
       setIsPlaying(true);
@@ -185,6 +187,8 @@ export const useSpotifyPlayer = (accessToken) => {
       // Revert
       setIsPaused(true);
       setIsPlaying(false);
+    } finally {
+      setTimeout(() => setIsActionPending(false), 250);
     }
   };
 

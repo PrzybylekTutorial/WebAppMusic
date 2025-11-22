@@ -520,16 +520,21 @@ function App() {
                 </div>
 
                 <ProgressBar 
+                  // Pass percentage directly for CSS transition to handle smoothness
+                  // This avoids re-rendering on every millisecond change
                   progress={gameMode === 'progressive' ? Math.min(player.progress, gameModeDuration) : player.progress}
                   duration={gameModeDuration}
                   maxDuration={gameMode === 'progressive' ? 30000 : null}
                   markers={gameMode === 'progressive' ? PROGRESSIVE_STEPS : null}
                   onSeek={player.handleSeek}
+                  isPlaying={player.isPlaying && !player.isPaused}
                 />
 
                 <GameControls 
                   isPaused={player.isPaused}
                   togglePlayPause={async () => {
+                    if (player.isActionPending) return; // Prevent double clicks
+                    
                     if (player.isPaused) {
                       const tolerance = 200; // 200ms tolerance for "end of segment"
                       const isEndOfSegment = gameMode === 'progressive' && 
