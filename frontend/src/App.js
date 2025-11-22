@@ -14,6 +14,21 @@ import {
 // Import the DynamicPlaylistManager component for playlist creation and management
 import DynamicPlaylistManager from './DynamicPlaylistManager';
 
+// ===== API CONFIGURATION =====
+// Get the API base URL - use production URL when running locally, relative URL when deployed
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_BASE_URL = isLocalhost 
+  ? 'https://web-app-music-przybylektutorials-projects.vercel.app'
+  : '';
+const LOGIN_URL = `${API_BASE_URL}/api/auth/login`;
+
+// Helper function to get API URL (for endpoints that need absolute URLs when running locally)
+const getApiUrl = (endpoint) => {
+  // Remove leading slash if present to avoid double slashes
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
+  return isLocalhost ? `${API_BASE_URL}/${cleanEndpoint}` : `/${cleanEndpoint}`;
+};
+
 function App() {
   // ===== STATE MANAGEMENT =====
   // Array of Spotify track URIs (unique identifiers) for the game
@@ -115,7 +130,7 @@ function App() {
   // Refresh access token using refresh token
   const refreshAccessToken = async (refreshToken) => {
     try {
-      const response = await fetch('/api/auth/refresh', {
+      const response = await fetch(getApiUrl('/api/auth/refresh'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -179,7 +194,7 @@ function App() {
         // Try auto-login with app account
         console.log('Attempting auto-login with app account...');
         try {
-          const autoLoginResponse = await fetch('/api/auth/auto-login');
+          const autoLoginResponse = await fetch(getApiUrl('/api/auth/auto-login'));
           if (autoLoginResponse.ok) {
             const autoLoginData = await autoLoginResponse.json();
             if (autoLoginData.access_token) {
@@ -260,7 +275,7 @@ function App() {
         console.log(`Using dynamic playlist: ${playlistId}`);
         
         // Fetch tracks from our backend API (which gets them from Spotify)
-        const response = await fetch(`/api/playlist-tracks/${playlistId}`, {
+        const response = await fetch(getApiUrl(`/api/playlist-tracks/${playlistId}`), {
           headers: {
             'Authorization': `Bearer ${accessToken}` // Send user's token for authentication
           }
@@ -758,7 +773,7 @@ function App() {
 
     // Search through MongoDB database
     try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(input)}&limit=10`);
+      const response = await fetch(getApiUrl(`/api/search?q=${encodeURIComponent(input)}&limit=10`));
       if (response.ok) {
         const mongoResults = await response.json();
         const mongoSongs = mongoResults.map(song => song.title);
@@ -887,7 +902,7 @@ function App() {
             </div>
           ) : !accessToken ? (
             <div>
-              <a href="/api/auth/login" style={{ textDecoration: 'none' }}>
+              <a href={LOGIN_URL} style={{ textDecoration: 'none' }}>
                 <button style={{
                   padding: '15px 30px',
                   fontSize: '1.2rem',
