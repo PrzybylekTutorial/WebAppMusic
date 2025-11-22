@@ -1,4 +1,5 @@
 import React from 'react';
+import { Play, Pause, RotateCcw, SkipForward, Clock } from 'lucide-react';
 
 const GameControls = ({ 
   isPaused, 
@@ -26,95 +27,51 @@ const GameControls = ({
       const nextDuration = progressiveSteps[currentStepIndex + 1];
       const diff = nextDuration - currentDuration;
       const diffDisplay = diff >= 1000 ? `${(diff / 1000).toFixed(1)}s` : `${diff}ms`;
-      return `⏭️ Reveal (+${diffDisplay})`;
+      return (
+        <>
+          Reveal <span style={{ fontSize: '0.8em', opacity: 0.8 }}>(+{diffDisplay})</span>
+        </>
+      );
     }
-    return '⏭️ Skip';
+    return 'Skip';
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 15 }}>
+    <div className="controls-container">
       {gameMode === 'progressive' && (
-        <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: 5 }}>
-          Time Tier: {currentStepIndex + 1} / {totalSteps} ({formatTime(gameModeDuration)}s)
+        <div className="time-tier-badge">
+          <Clock size={14} style={{ marginRight: 5, display: 'inline', verticalAlign: 'middle' }} />
+          Time Tier: {currentStepIndex + 1} / {totalSteps} ({formatTime(gameModeDuration)})
         </div>
       )}
-      <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-      <button 
-        onClick={togglePlayPause} 
-        style={{ 
-          padding: '10px 20px',
-          backgroundColor: isPaused ? '#B5EAD7' : '#FF9AA2', 
-          color: '#555555', 
-          border: 'none', 
-          borderRadius: 25,
-          cursor: 'pointer',
-          transition: 'all 0.3s ease',
-          fontWeight: 'bold',
-          boxShadow: '0 4px 8px rgba(0,0,0,0.05)'
-        }}
-        onMouseOver={(e) => {
-          e.target.style.transform = 'translateY(-2px)';
-          e.target.style.boxShadow = '0 6px 12px rgba(0,0,0,0.1)';
-        }}
-        onMouseOut={(e) => {
-          e.target.style.transform = 'translateY(0)';
-          e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.05)';
-        }}
-      >
-        {progress >= gameModeDuration && gameMode !== 'endless' ? '▶️ Play' : (isPaused ? '▶️ Play' : '⏸️ Pause')}
-      </button>
-      <button 
-        onClick={restartMusic} 
-        style={{ 
-          padding: '10px 20px',
-          backgroundColor: '#C7CEEA', 
-          color: '#555555', 
-          border: 'none', 
-          borderRadius: 25,
-          cursor: 'pointer',
-          transition: 'all 0.3s ease',
-          fontWeight: 'bold',
-          boxShadow: '0 4px 8px rgba(0,0,0,0.05)'
-        }}
-        onMouseOver={(e) => {
-          e.target.style.transform = 'translateY(-2px)';
-          e.target.style.boxShadow = '0 6px 12px rgba(0,0,0,0.1)';
-        }}
-        onMouseOut={(e) => {
-          e.target.style.transform = 'translateY(0)';
-          e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.05)';
-        }}
-      >
-        🔄 Replay
-      </button>
-      <button 
-        onClick={skipSong} 
-        style={{ 
-          padding: '10px 20px',
-          backgroundColor: '#FFDAC1', 
-          color: '#555555', 
-          border: 'none', 
-          borderRadius: 25,
-          cursor: 'pointer',
-          transition: 'all 0.3s ease',
-          fontWeight: 'bold',
-          boxShadow: '0 4px 8px rgba(0,0,0,0.05)'
-        }}
-        onMouseOver={(e) => {
-          e.target.style.transform = 'translateY(-2px)';
-          e.target.style.boxShadow = '0 6px 12px rgba(0,0,0,0.1)';
-        }}
-        onMouseOut={(e) => {
-          e.target.style.transform = 'translateY(0)';
-          e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.05)';
-        }}
-      >
-        {getSkipLabel()}
-      </button>
-    </div>
+      
+      <div className="controls-row">
+        <button 
+          onClick={togglePlayPause} 
+          className={`btn-control ${isPaused ? 'btn-control-play' : 'btn-control-pause'}`}
+        >
+          {isPaused ? <Play size={20} fill="currentColor" /> : <Pause size={20} fill="currentColor" />}
+          {progress >= gameModeDuration && gameMode !== 'endless' ? 'Play' : (isPaused ? 'Play' : 'Pause')}
+        </button>
+
+        <button 
+          onClick={restartMusic} 
+          className="btn-control btn-control-replay"
+        >
+          <RotateCcw size={20} />
+          Replay
+        </button>
+
+        <button 
+          onClick={skipSong} 
+          className="btn-control btn-control-skip"
+        >
+          <SkipForward size={20} fill="currentColor" />
+          {getSkipLabel()}
+        </button>
+      </div>
     </div>
   );
 };
 
 export default GameControls;
-

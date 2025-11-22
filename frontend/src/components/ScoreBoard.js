@@ -1,43 +1,35 @@
 import React from 'react';
+import { Trophy, Flame, Target, Hash, Star } from 'lucide-react';
 
 const ScoreBoard = ({ score, totalGuesses, streak, bestStreak, highScore, playedCount, totalCount }) => {
   return (
-    <div style={{ 
-      background: 'linear-gradient(135deg, #C7CEEA 0%, #FFDAC1 100%)',
-      padding: 20,
-      borderRadius: 15,
-      marginBottom: 30,
-      boxShadow: '0 8px 16px rgba(0,0,0,0.05)'
-    }}>
-      <h3 style={{ textAlign: 'center', margin: '0 0 15px 0', color: '#555555' }}>
-        🏆 Game Statistics
-      </h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 15 }}>
-        <div style={{ textAlign: 'center', color: '#555555' }}>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{score}/{totalGuesses}</div>
-          <div style={{ fontSize: '0.9rem' }}>Score</div>
+    <div className="scoreboard-container">
+      <div className="score-item">
+        <div className="score-label"><Trophy size={14} style={{ display: 'inline', marginRight: 4 }} /> Score</div>
+        <div className="score-value" style={{ color: 'var(--color-state-success)' }}>{score}</div>
+      </div>
+      
+      <div className="score-item">
+        <div className="score-label"><Flame size={14} style={{ display: 'inline', marginRight: 4 }} /> Streak</div>
+        <div className="score-value" style={{ color: 'var(--color-state-active)' }}>{streak}</div>
+      </div>
+
+      <div className="score-item">
+        <div className="score-label"><Star size={14} style={{ display: 'inline', marginRight: 4 }} /> Best Streak</div>
+        <div className="score-value">{bestStreak}</div>
+      </div>
+
+      <div className="score-item">
+        <div className="score-label"><Target size={14} style={{ display: 'inline', marginRight: 4 }} /> Accuracy</div>
+        <div className="score-value">
+          {totalGuesses > 0 ? Math.round((score / totalGuesses) * 100) : 0}%
         </div>
-        <div style={{ textAlign: 'center', color: '#555555' }}>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-            {totalGuesses > 0 ? Math.round((score/totalGuesses)*100) : 0}%
-          </div>
-          <div style={{ fontSize: '0.9rem' }}>Accuracy</div>
-        </div>
-        <div style={{ textAlign: 'center', color: '#555555' }}>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{streak}</div>
-          <div style={{ fontSize: '0.9rem' }}>Current Streak</div>
-        </div>
-        <div style={{ textAlign: 'center', color: '#555555' }}>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{bestStreak}</div>
-          <div style={{ fontSize: '0.9rem' }}>Best Streak</div>
-        </div>
-        <div style={{ textAlign: 'center', color: '#555555' }}>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{highScore}</div>
-          <div style={{ fontSize: '0.9rem' }}>High Score</div>
-        </div>
-        <div style={{ textAlign: 'center', color: '#555555' }}>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{playedCount}/{totalCount}</div>
-          <div style={{ fontSize: '0.9rem' }}>Songs Played</div>
+      </div>
+
+      <div className="score-item">
+        <div className="score-label"><Hash size={14} style={{ display: 'inline', marginRight: 4 }} /> Progress</div>
+        <div className="score-value" style={{ fontSize: '1.2rem' }}>
+          {playedCount} <span style={{ color: 'var(--color-text-disabled)', fontSize: '0.9rem' }}>/ {totalCount}</span>
         </div>
       </div>
     </div>
@@ -45,4 +37,3 @@ const ScoreBoard = ({ score, totalGuesses, streak, bestStreak, highScore, played
 };
 
 export default ScoreBoard;
-

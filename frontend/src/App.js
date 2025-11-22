@@ -7,6 +7,9 @@ import {
   getTrackDetails 
 } from './spotifyService';
 import { getApiUrl } from './config';
+import { PlayCircle, RotateCcw, LogOut, Loader, Music } from 'lucide-react';
+
+import './App.css'; // Ensure App.css is imported
 
 // Components
 import WelcomeScreen from './components/WelcomeScreen';
@@ -145,17 +148,7 @@ function App() {
   // ===== GAMEPLAY FUNCTIONS =====
   const playProgressiveSnippet = useCallback(async (durationMs) => {
     if (!player.deviceId) return;
-    
-    // We use handlePlay to ensure it starts from beginning or use seek if already loaded?
-    // handlePlay with URI restarts it. 
-    // But we need to handle the pause timing.
-    
-    // For consistency, we'll rely on the fact that handlePlay (or restart) was called.
-    // But here we are just handling the "Play" button action for progressive mode?
-    // Actually, this function is for "Replaying" or "Playing" the snippet.
-    
-    // Wait, playRandomSong sets up the NEW song.
-    // This function is for when we need to play the current snippet again.
+    // Logic for progressive play...
   }, [player]);
 
   const playRandomSong = async () => {
@@ -236,22 +229,16 @@ function App() {
       if (gameMode === 'progressive') {
         const nextIndex = currentStepIndex + 1;
         if (nextIndex < PROGRESSIVE_STEPS.length) {
-          // Advance to next step
           setCurrentStepIndex(nextIndex);
           const newDuration = PROGRESSIVE_STEPS[nextIndex];
           setGameModeDuration(newDuration);
           
-          // Automatically play the new longer snippet
           player.handlePlay(currentSong.uri, currentSong.id).then(() => {
             setTimeout(() => {
               if (player.localPause) player.localPause();
               else player.handlePause();
             }, newDuration);
           });
-          
-          // Don't show result yet, just feedback that it was wrong? 
-          // Or maybe we should show "Wrong, +1s added" toast? 
-          // For now, just expanding the time is the feedback.
           return;
         }
       }
@@ -269,12 +256,10 @@ function App() {
     if (gameMode === 'progressive' && currentSong && !guessResult) {
       const nextIndex = currentStepIndex + 1;
       if (nextIndex < PROGRESSIVE_STEPS.length) {
-        // Advance to next step instead of skipping song
         setCurrentStepIndex(nextIndex);
         const newDuration = PROGRESSIVE_STEPS[nextIndex];
         setGameModeDuration(newDuration);
         
-        // Play new longer snippet
         await player.handlePlay(currentSong.uri, currentSong.id);
         setTimeout(() => {
           if (player.localPause) player.localPause();
@@ -282,23 +267,17 @@ function App() {
         }, newDuration);
         return;
       }
-      // If last step, fall through to normal skip (which reveals/fails)
     }
 
     try {
-      // We don't need to explicitly pause, playRandomSong will handle the new track
-      // await player.handlePause(); 
-      
-      // Reset states but keep "isPlaying" logic ready for the next song
       setCurrentSong(null);
       setUserGuess('');
       setGuessResult(null);
       player.setIsPlaying(false); 
       player.setIsPaused(false);
       player.setProgress(0);
-      setStreak(0); // Penalty for skipping
+      setStreak(0);
       
-      // Play the next random song
       await playRandomSong();
     } catch (error) {
       console.error('Error skipping song:', error);
@@ -326,7 +305,6 @@ function App() {
     setCurrentStepIndex(0);
   };
 
-  // Search/Suggestions logic
   const generateSuggestions = async (input) => {
     if (!input || input.length < 2) {
       setSuggestions([]);
@@ -380,35 +358,13 @@ function App() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%)',
-      padding: '20px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#555555'
-    }}>
-      <div style={{ 
-        maxWidth: 800, 
-        margin: '0 auto', 
-        backgroundColor: 'rgba(255, 255, 255, 0.85)',
-        borderRadius: 20,
-        padding: 30,
-        boxShadow: '0 20px 40px rgba(0,0,0,0.05)',
-        backdropFilter: 'blur(15px)'
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: 30 }}>
-          <h1 style={{ 
-            fontSize: '3rem', 
-            fontWeight: 'bold', 
-            background: 'linear-gradient(45deg, #C7CEEA, #FF9AA2)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            margin: 0,
-            textShadow: '2px 2px 4px rgba(0,0,0,0.05)'
-          }}>
-             Song Guess Game 🎵
+    <div className="app-container">
+      <div className="glass-card">
+        <div className="app-header">
+          <h1 className="app-title">
+            Song Guess Game <Music style={{ display: 'inline', marginBottom: -4 }} size={48} />
           </h1>
-          <p style={{ color: '#666', fontSize: '1.1rem', marginTop: 10 }}>
+          <p className="app-subtitle">
             Test your music knowledge!
           </p>
         </div>
@@ -417,26 +373,12 @@ function App() {
           <WelcomeScreen authLoading={authLoading} />
         ) : (
           <>
-            <div style={{ textAlign: 'center', marginBottom: 30 }}>
-              <div style={{ color: '#666', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                ✅ Connected to Spotify {rememberMe && ' (Auto-login enabled)'}
-                <button 
-                  onClick={logout}
-                  style={{
-                    padding: '8px 16px',
-                    fontSize: '0.9rem',
-                    backgroundColor: '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 20,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Logout
-                </button>
-              </div>
+            <div className="user-status">
+              <span>✅ Connected to Spotify {rememberMe && ' (Auto-login)'}</span>
+              <button onClick={logout} className="logout-btn">
+                <LogOut size={16} style={{ marginRight: 5 }} /> Logout
+              </button>
             </div>
-
 
             {accessToken && (
               <DynamicPlaylistManager 
@@ -450,13 +392,9 @@ function App() {
             )}
 
             {accessToken && !player.deviceId && (
-              <div style={{ textAlign: 'center', padding: '20px', color: '#666', backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: '10px', marginBottom: '20px' }}>
+              <div style={{ textAlign: 'center', padding: '20px', color: '#666', backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: '15px', marginBottom: '20px' }}>
                 <h3>⏳ Initializing Spotify Player...</h3>
                 <p>Waiting for Spotify Web Playback SDK to be ready.</p>
-                <p style={{ fontSize: '0.9rem', marginTop: '10px' }}>
-                  ⚠️ If this takes too long, please check if your browser supports DRM (Widevine). 
-                  <br/>Note: This may not work in embedded browsers or some private windows.
-                </p>
               </div>
             )}
 
@@ -483,52 +421,26 @@ function App() {
                 <button 
                   onClick={playRandomSong}
                   disabled={isLoading}
-                  style={{
-                    padding: '20px 40px',
-                    fontSize: '1.3rem',
-                    backgroundColor: isLoading ? '#d3d3d3' : '#B5EAD7',
-                    color: isLoading ? '#888' : '#555555',
-                    border: 'none',
-                    borderRadius: 50,
-                    cursor: isLoading ? 'not-allowed' : 'pointer',
-                    boxShadow: '0 8px 16px rgba(181, 234, 215, 0.4)',
-                    transition: 'all 0.3s ease',
-                    fontWeight: 'bold'
-                  }}
+                  className="play-btn-large"
                 >
-                  {isLoading ? '🔄 Loading...' : '🎵 Play Random Song'}
+                  {isLoading ? <Loader className="spin" size={24} /> : <PlayCircle size={28} />}
+                  {isLoading ? 'Loading...' : 'Play Random Song'}
                 </button>
               </div>
             )}
 
             {(score > 0 || totalGuesses > 0) && (
-              <div style={{ textAlign: 'center', marginBottom: 30 }}>
-                <button 
-                  onClick={resetGame} 
-                  style={{
-                    padding: '10px 20px',
-                    backgroundColor: '#FFDAC1',
-                    color: '#555555',
-                    border: 'none',
-                    borderRadius: 25,
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  🔄 Reset Game
+              <div className="reset-btn-container">
+                <button onClick={resetGame} className="btn-secondary">
+                  <RotateCcw size={16} style={{ marginRight: 8, marginBottom: -2 }} />
+                  Reset Game
                 </button>
               </div>
             )}
 
             {currentSong && player.isPlaying && (
-              <div style={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                padding: 25,
-                borderRadius: 15,
-                boxShadow: '0 8px 16px rgba(0,0,0,0.05)',
-                border: '2px solid #B5EAD7'
-              }}>
-                <h3 style={{ textAlign: 'center', margin: '0 0 20px 0', color: '#333' }}>
+              <div className="now-playing-card">
+                <h3 style={{ textAlign: 'center', margin: '0 0 20px 0', color: 'var(--color-text-primary)' }}>
                    Now Playing (Round {roundsPlayed})
                 </h3>
                 
@@ -552,7 +464,6 @@ function App() {
                   togglePlayPause={async () => {
                     if (player.isPaused) {
                       if (gameMode === 'progressive' && player.progress >= gameModeDuration) {
-                         // If we are at the end of the snippet, replay from start
                          await player.handlePlay(currentSong.uri, currentSong.id);
                          setTimeout(() => {
                            if (player.localPause) player.localPause();

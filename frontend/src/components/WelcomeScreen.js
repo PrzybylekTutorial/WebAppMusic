@@ -1,61 +1,43 @@
 import React from 'react';
 import { LOGIN_URL } from '../config';
+import { Headphones, Lock, Info, Loader } from 'lucide-react';
 
 const WelcomeScreen = ({ authLoading }) => {
   return (
     <div style={{ textAlign: 'center', marginBottom: 30 }}>
       {authLoading ? (
-        <div style={{ color: '#666', fontSize: '1rem' }}>
-          🔄 Loading Spotify...
+        <div style={{ color: 'var(--color-text-secondary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+          <Loader className="spin" size={24} /> Connecting to Spotify...
         </div>
       ) : (
         <div>
           <a href={LOGIN_URL} style={{ textDecoration: 'none' }}>
-            <button style={{
-              padding: '15px 30px',
-              fontSize: '1.2rem',
-              backgroundColor: '#B5EAD7',
-              color: '#555555',
-              border: 'none',
-              borderRadius: 50,
-              cursor: 'pointer',
-              boxShadow: '0 8px 16px rgba(181, 234, 215, 0.4)',
-              transition: 'all 0.3s ease',
-              fontWeight: 'bold'
-            }} onMouseOver={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 12px 20px rgba(181, 234, 215, 0.6)';
-            }} onMouseOut={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 8px 16px rgba(181, 234, 215, 0.4)';
-            }}>
-              🎧 Connect with Spotify
+            <button className="btn-primary" style={{ fontSize: '1.2rem', padding: '15px 40px' }}>
+              <Headphones size={24} /> Connect with Spotify
             </button>
           </a>
-          <div style={{ marginTop: 10, fontSize: '0.9rem', color: '#666', maxWidth: '400px', margin: '10px auto 0' }}>
-            💡 <strong>One-time setup:</strong> Connect once and you'll stay logged in automatically on this device!
-          </div>
-          <div style={{ marginTop: 5, fontSize: '0.8rem', color: '#888', maxWidth: '400px', margin: '5px auto 0' }}>
-            🔒 Secure OAuth login - your credentials are never stored
+          
+          <div style={{ marginTop: 20, fontSize: '0.95rem', color: 'var(--color-text-secondary)', maxWidth: '450px', margin: '20px auto 0' }}>
+             ✨ <strong>One-time setup:</strong> Connect once and stay logged in!
           </div>
           
-          {/* Authentication Info Box */}
           <div style={{ 
-            marginTop: 20, 
-            padding: 15, 
-            backgroundColor: '#E2F0CB', 
-            borderRadius: 10, 
-            border: '1px solid #B5EAD7',
-            maxWidth: '500px',
-            margin: '20px auto 0'
+            marginTop: 30, 
+            padding: 25, 
+            backgroundColor: 'var(--color-accent-lime)', 
+            borderRadius: 20, 
+            maxWidth: '550px',
+            margin: '30px auto 0',
+            boxShadow: 'var(--shadow-soft)'
           }}>
-            <div style={{ fontSize: '0.9rem', color: '#333', textAlign: 'left' }}>
-              <div style={{ fontWeight: 'bold', marginBottom: 8 }}>🔐 How Authentication Works:</div>
-              <ul style={{ margin: 0, paddingLeft: 20, fontSize: '0.85rem', lineHeight: 1.4 }}>
-                <li><strong>First time:</strong> Click "Connect with Spotify" to authorize this app</li>
-                <li><strong>Automatic login:</strong> On future visits, you'll be logged in automatically</li>
-                <li><strong>New device/browser:</strong> You'll need to connect once on each new device</li>
-                <li><strong>Security:</strong> Only access tokens are stored locally, never your password</li>
+            <div style={{ textAlign: 'left', color: 'var(--color-text-primary)' }}>
+              <div style={{ fontWeight: 'bold', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, fontSize: '1.1rem' }}>
+                <Lock size={18} /> Secure Authentication
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 20, fontSize: '0.9rem', lineHeight: 1.6 }}>
+                <li>This app uses Spotify's secure login system.</li>
+                <li>Your password is <strong>never</strong> shared with us.</li>
+                <li>We only access your public profile and playback control.</li>
               </ul>
             </div>
           </div>
@@ -66,4 +48,3 @@ const WelcomeScreen = ({ authLoading }) => {
 };
 
 export default WelcomeScreen;
-

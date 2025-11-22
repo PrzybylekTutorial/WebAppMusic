@@ -47,6 +47,9 @@
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .logout-btn:hover {
@@ -99,4 +102,223 @@
   text-align: center;
   margin-bottom: 30px;
   margin-top: 20px;
+}
+
+/* Game Controls */
+.controls-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.controls-row {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.btn-control {
+  padding: 12px 25px;
+  border: none;
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-primary);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.btn-control:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+}
+
+.btn-control-play {
+  background-color: var(--color-primary-mint);
+}
+
+.btn-control-pause {
+  background-color: var(--color-state-active);
+  color: white;
+}
+
+.btn-control-replay {
+  background-color: var(--color-accent-lavender);
+}
+
+.btn-control-skip {
+  background-color: var(--color-accent-peach);
+}
+
+.time-tier-badge {
+  background-color: rgba(255, 255, 255, 0.5);
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+/* Guess Input */
+.guess-input-wrapper {
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.guess-form {
+  display: flex;
+  gap: 10px;
+}
+
+.guess-input {
+  width: 100%;
+  padding: 15px 25px;
+  font-size: 1.1rem;
+  border: 2px solid transparent;
+  border-radius: var(--radius-button);
+  background-color: white;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.guess-input:focus {
+  border-color: var(--color-accent-lavender);
+  box-shadow: 0 8px 20px rgba(199, 206, 234, 0.4);
+}
+
+.guess-submit-btn {
+  padding: 0 25px;
+  background-color: var(--color-primary-mint);
+  border: none;
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  transition: all 0.2s ease;
+}
+
+.guess-submit-btn:hover {
+  background-color: #a3e6ce;
+  transform: scale(1.05);
+}
+
+.suggestions-list {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  list-style: none;
+  padding: 10px 0;
+  margin: 0;
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid rgba(255,255,255,0.5);
+}
+
+.suggestion-item {
+  padding: 12px 25px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+}
+
+.suggestion-item:hover {
+  background-color: var(--color-accent-lime);
+}
+
+/* Result Display */
+.result-card {
+  background: var(--color-bg-card);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-card);
+  padding: 30px;
+  text-align: center;
+  margin: 30px 0;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.9) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.result-correct {
+  border-color: var(--color-state-success);
+  background: linear-gradient(to bottom right, rgba(181, 234, 215, 0.2), rgba(255, 255, 255, 0.8));
+}
+
+.result-incorrect {
+  border-color: var(--color-state-error);
+  background: linear-gradient(to bottom right, rgba(255, 154, 162, 0.1), rgba(255, 255, 255, 0.8));
+}
+
+/* Score Board */
+.scoreboard-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 40px;
+}
+
+.score-item {
+  background: rgba(255, 255, 255, 0.6);
+  padding: 15px 25px;
+  border-radius: 20px;
+  text-align: center;
+  min-width: 100px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+  transition: transform 0.3s ease;
+}
+
+.score-item:hover {
+  transform: translateY(-3px);
+}
+
+.score-label {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.score-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+/* Progress Bar */
+.progress-container {
+  width: 100%;
+  height: 12px;
+  background-color: rgba(0,0,0,0.05);
+  border-radius: 10px;
+  margin: 20px 0;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary-mint), var(--color-accent-lavender));
+  border-radius: 10px;
+  transition: width 0.1s linear;
 }
