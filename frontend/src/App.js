@@ -164,9 +164,12 @@ function App() {
 
   // Auto-stop logic
   useEffect(() => {
-    if (player.progress >= gameModeDuration && player.isPlaying) {
+    if (player.progress >= gameModeDuration && player.isPlaying && gameMode === 'progressive') {
       player.handlePause();
-      if (gameMode !== 'progressive' && currentSong && !guessResult) {
+      // Don't show result for progressive mode timeout, just pause
+    } else if (player.progress >= gameModeDuration && player.isPlaying && gameMode !== 'progressive') {
+       player.handlePause();
+       if (currentSong && !guessResult) {
         setGuessResult({
           correct: false,
           actualTitle: currentSong.title
@@ -222,7 +225,12 @@ function App() {
         setGameModeDuration(initialStep);
         setCurrentStepIndex(0);
         
-        setTimeout(() => {
+        // Clear any existing timeout to prevent race conditions
+        if (window.progressiveTimeout) {
+          clearTimeout(window.progressiveTimeout);
+        }
+
+        window.progressiveTimeout = setTimeout(() => {
           if (player.localPause) player.localPause();
           else player.handlePause();
         }, initialStep);
