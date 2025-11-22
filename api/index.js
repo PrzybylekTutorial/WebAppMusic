@@ -1159,6 +1159,61 @@ app.post('/api/add-specific-song-to-playlist', async (req, res) => {
   }
 });
 
+// Delete playlist endpoint
+app.delete('/api/delete-playlist/:playlistId', async (req, res) => {
+  try {
+    const { playlistId } = req.params;
+    
+    if (!playlistId) {
+      return res.status(400).json({ error: 'Playlist ID is required' });
+    }
+    
+    // Use user's access token from Authorization header
+    const authHeader = req.headers.authorization;
+    let token = null;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    } else {
+      // Fallback to session token
+      token = req.session.access_token;
+    }
+    
+    if (!token) {
+      return res.status(401).json({ error: 'User not authenticated with Spotify' });
+    }
+
+    console.log(`Attempting to delete (unfollow) playlist: ${playlistId}`);
+
+    // To delete a playlist for the current user, we "unfollow" it
+    const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/followers`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (response.ok) {
+      console.log(`Successfully deleted playlist: ${playlistId}`);
+      return res.json({ success: true, message: 'Playlist deleted successfully' });
+    } else {
+      // If it's 404, it might already be deleted, which is fine
+      if (response.status === 404) {
+        console.log(`Playlist ${playlistId} not found (possibly already deleted)`);
+        return res.json({ success: true, message: 'Playlist already deleted or not found' });
+      }
+      
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Failed to delete playlist:', response.status, errorData);
+      return res.status(response.status).json({ 
+        error: 'Failed to delete playlist', 
+        details: errorData 
+      });
+    }
+  } catch (error) {
+    console.error('Delete playlist error:', error);
+    res.status(500).json({ error: 'Failed to delete playlist' });
+  }
+});
+
 // Export for Vercel - Serverless function format
 module.exports = (req, res) => {
   // Handle CORS preflight requests

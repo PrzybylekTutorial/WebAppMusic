@@ -52,6 +52,35 @@ function App() {
   const [playedSongs, setPlayedSongs] = useState(new Set());
 
   // ===== HELPER FUNCTIONS =====
+  const cleanupDynamicPlaylist = useCallback(async (playlistId, token) => {
+    if (!playlistId || !token) return;
+    
+    console.log('Cleaning up dynamic playlist:', playlistId);
+    try {
+      await fetch(getApiUrl(`/api/delete-playlist/${playlistId}`), {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      // Clear local storage
+      localStorage.removeItem('dynamic_playlist_id');
+    } catch (error) {
+      console.error('Error cleaning up playlist:', error);
+    }
+  }, []);
+
+  // Handle orphaned playlists on mount
+  useEffect(() => {
+    if (accessToken) {
+      const storedPlaylistId = localStorage.getItem('dynamic_playlist_id');
+      // If we have a stored playlist ID but no active game session using it,
+      // or if it's just a fresh load, we should clean it up.
+      if (storedPlaylistId && !dynamicPlaylistId) {
+         cleanupDynamicPlaylist(storedPlaylistId, accessToken);
+      }
+    }
+  }, [accessToken, cleanupDynamicPlaylist, dynamicPlaylistId]);
+
   const getRandomUnplayedSong = useCallback(() => {
     if (trackUris.length === 0) return null;
     const unplayedSongs = trackUris.filter(uri => !playedSongs.has(uri));
@@ -292,7 +321,13 @@ function App() {
     playRandomSong();
   };
 
-  const resetGame = () => {
+  const resetGame = async () => {
+    if (dynamicPlaylistId && accessToken) {
+       await cleanupDynamicPlaylist(dynamicPlaylistId, accessToken);
+       setDynamicPlaylistId(null);
+       setUseDynamicPlaylist(false);
+    }
+
     setScore(0);
     setTotalGuesses(0);
     setStreak(0);
@@ -303,6 +338,13 @@ function App() {
     setGuessResult(null);
     setPlayedSongs(new Set());
     setCurrentStepIndex(0);
+  };
+
+  const handleLogout = async () => {
+    if (dynamicPlaylistId && accessToken) {
+       await cleanupDynamicPlaylist(dynamicPlaylistId, accessToken);
+    }
+    logout();
   };
 
   const generateSuggestions = async (input) => {
@@ -375,7 +417,7 @@ function App() {
           <>
             <div className="user-status">
               <span>✅ Connected to Spotify {rememberMe && ' (Auto-login)'}</span>
-              <button onClick={logout} className="logout-btn">
+              <button onClick={handleLogout} className="logout-btn">
                 <LogOut size={16} style={{ marginRight: 5 }} /> Logout
               </button>
             </div>
@@ -384,7 +426,19 @@ function App() {
               <DynamicPlaylistManager 
                 accessToken={accessToken}
                 onPlaylistCreated={(playlistId) => {
+                  // If there was an existing dynamic playlist, clean it up
+                  if (dynamicPlaylistId) {
+                      cleanupDynamicPlaylist(dynamicPlaylistId, accessToken);
+                  }
+                  
+                  // Also check localStorage for any stale IDs
+                  const stored = localStorage.getItem('dynamic_playlist_id');
+                  if (stored && stored !== playlistId && stored !== dynamicPlaylistId) {
+                      cleanupDynamicPlaylist(stored, accessToken);
+                  }
+
                   setDynamicPlaylistId(playlistId);
+                  localStorage.setItem('dynamic_playlist_id', playlistId);
                   setUseDynamicPlaylist(true);
                 }}
                 onPlaylistUpdate={fetchTrackUris}
