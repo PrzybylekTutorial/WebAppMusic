@@ -366,43 +366,6 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
         </div>
       </div>
 
-      {/* Filters */}
-      {currentPlaylistId && (
-        <div className="grouped-section">
-          <h4 className="section-title"><Filter size={18} /> Song Filters</h4>
-          <div className="filter-grid">
-            <select
-              className="form-select"
-              value={filters.genre}
-              onChange={(e) => setFilters(prev => ({ ...prev, genre: e.target.value }))}
-            >
-              <option value="">Select Genre (All)</option>
-              {isLoadingGenres ? (
-                <option disabled>Loading...</option>
-              ) : (
-                availableGenres.map((genre, index) => (
-                  <option key={index} value={genre}>{genre}</option>
-                ))
-              )}
-            </select>
-            <input
-              className="form-input"
-              type="number"
-              placeholder="Year From (e.g., 1980)"
-              value={filters.yearFrom}
-              onChange={(e) => setFilters(prev => ({ ...prev, yearFrom: e.target.value }))}
-            />
-            <input
-              className="form-input"
-              type="number"
-              placeholder="Year To (e.g., 2000)"
-              value={filters.yearTo}
-              onChange={(e) => setFilters(prev => ({ ...prev, yearTo: e.target.value }))}
-            />
-          </div>
-        </div>
-      )}
-
       {/* Search Section */}
       {currentPlaylistId && (
         <div className="grouped-section">
@@ -498,17 +461,52 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
         </div>
       )}
 
-      {/* Add More Songs Button */}
+      {/* Filters */}
       {currentPlaylistId && (
-        <div className="button-container">
-          <button
-            className="btn btn-add"
-            onClick={addRandomSongFromDatabase}
-            disabled={isLoading}
-          >
-            {isLoading ? <Loader className="spin" size={18} /> : <Shuffle size={18} />}
-            {isLoading ? 'Adding...' : 'Add Random Song'}
-          </button>
+        <div className="grouped-section">
+          <h4 className="section-title"><Filter size={18} /> Song Filters (Random Add)</h4>
+          <div className="filter-grid" style={{ marginBottom: 20 }}>
+            <select
+              className="form-select"
+              value={filters.genre}
+              onChange={(e) => setFilters(prev => ({ ...prev, genre: e.target.value }))}
+            >
+              <option value="">Select Genre (All)</option>
+              {isLoadingGenres ? (
+                <option disabled>Loading...</option>
+              ) : (
+                availableGenres.map((genre, index) => (
+                  <option key={index} value={genre}>{genre}</option>
+                ))
+              )}
+            </select>
+            <input
+              className="form-input"
+              type="number"
+              placeholder="Year From (e.g., 1980)"
+              value={filters.yearFrom}
+              onChange={(e) => setFilters(prev => ({ ...prev, yearFrom: e.target.value }))}
+            />
+            <input
+              className="form-input"
+              type="number"
+              placeholder="Year To (e.g., 2000)"
+              value={filters.yearTo}
+              onChange={(e) => setFilters(prev => ({ ...prev, yearTo: e.target.value }))}
+            />
+          </div>
+
+          {/* Add More Songs Button */}
+          <div className="button-container" style={{ marginBottom: 0 }}>
+            <button
+              className="btn btn-add"
+              onClick={addRandomSongFromDatabase}
+              disabled={isLoading}
+            >
+              {isLoading ? <Loader className="spin" size={18} /> : <Shuffle size={18} />}
+              {isLoading ? 'Adding...' : 'Add Random Song (Filtered)'}
+            </button>
+          </div>
         </div>
       )}
 
