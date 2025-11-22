@@ -289,9 +289,25 @@ app.get('/api/auth/callback', async (req, res) => {
   if (data.access_token) {
     req.session.access_token = data.access_token;
     req.session.refresh_token = data.refresh_token;
+
+    // --- ZMIANA TYMCZASOWA START ---
+    // Wyświetlamy Refresh Token w przeglądarce, abyś mógł go skopiować
+    console.log('REFRESH TOKEN:', data.refresh_token); // Zobaczysz to też w logach Vercel/lokalnych
+    
+    // Zamiast przekierowywać od razu, pokaż token
+    // Kiedy już go skopiujesz, cofnij tę zmianę do oryginalnego przekierowania!
+    res.send(`
+      <h1>Twój Refresh Token (skopiuj go!):</h1>
+      <p style="word-break: break-all; font-family: monospace; background: #eee; padding: 10px;">${data.refresh_token}</p>
+      <p>Dodaj go w Vercel jako zmienną środowiskową: SPOTIFY_APP_REFRESH_TOKEN</p>
+      <a href="${process.env.FRONTEND_URL || 'https://web-app-music-przybylektutorials-projects.vercel.app'}/?access_token=${data.access_token}&refresh_token=${data.refresh_token}">Przejdź do aplikacji</a>
+    `);
+    return; 
+    // --- ZMIANA TYMCZASOWA KONIEC ---
+
     // Redirect to frontend with both access and refresh tokens for automatic login
-    const frontendUrl = process.env.FRONTEND_URL || 'https://web-app-music-przybylektutorials-projects.vercel.app';
-    res.redirect(frontendUrl + '/?access_token=' + data.access_token + '&refresh_token=' + data.refresh_token);
+    // const frontendUrl = process.env.FRONTEND_URL || 'https://web-app-music-przybylektutorials-projects.vercel.app';
+    // res.redirect(frontendUrl + '/?access_token=' + data.access_token + '&refresh_token=' + data.refresh_token);
   } else {
     res.status(400).json(data);
   }
