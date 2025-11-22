@@ -469,20 +469,21 @@ function App() {
               </div>
             )}
 
-            {player.deviceId && (
-              <PlaylistSelector 
-                useDynamicPlaylist={useDynamicPlaylist}
-                setUseDynamicPlaylist={setUseDynamicPlaylist}
-                dynamicPlaylistId={dynamicPlaylistId}
-              />
-            )}
-
             {player.deviceId && trackUris.length > 0 && (
               <GameModeSelector 
                 gameMode={gameMode}
                 setGameMode={setGameMode}
                 duration={player.duration}
                 setGameModeDuration={setGameModeDuration}
+                disabled={roundsPlayed > 0 || currentSong !== null}
+              />
+            )}
+
+            {player.deviceId && (
+              <PlaylistSelector 
+                useDynamicPlaylist={useDynamicPlaylist}
+                setUseDynamicPlaylist={setUseDynamicPlaylist}
+                dynamicPlaylistId={dynamicPlaylistId}
               />
             )}
 

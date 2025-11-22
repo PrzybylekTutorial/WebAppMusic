@@ -1,10 +1,10 @@
 import React from 'react';
 
-const GameModeSelector = ({ gameMode, setGameMode, duration, setGameModeDuration }) => {
+const GameModeSelector = ({ gameMode, setGameMode, duration, setGameModeDuration, disabled }) => {
   return (
-    <div style={{ marginBottom: 30 }}>
+    <div style={{ marginBottom: 30, opacity: disabled ? 0.6 : 1, transition: 'opacity 0.3s ease' }}>
       <h3 style={{ textAlign: 'center', marginBottom: 20, color: '#333' }}>
-        🎮 Select Game Mode
+        🎮 Select Game Mode {disabled && <span style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>(Locked during game)</span>}
       </h3>
       <div style={{ display: 'flex', justifyContent: 'center', gap: 15, flexWrap: 'wrap' }}>
         {[
@@ -15,7 +15,9 @@ const GameModeSelector = ({ gameMode, setGameMode, duration, setGameModeDuration
         ].map(({ mode: m, label, time, color }) => (
           <button 
             key={m}
+            disabled={disabled}
             onClick={() => {
+              if (disabled) return;
               setGameMode(m);
               if (m === 'normal') setGameModeDuration(30000);
               else if (m === 'timeAttack') setGameModeDuration(15000);
@@ -28,16 +30,16 @@ const GameModeSelector = ({ gameMode, setGameMode, duration, setGameModeDuration
               color: 'white',
               border: 'none',
               borderRadius: 25,
-              cursor: 'pointer',
+              cursor: disabled ? 'not-allowed' : 'pointer',
               transition: 'all 0.3s ease',
               fontWeight: 'bold',
               boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
             }}
             onMouseOver={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
+              if (!disabled) e.target.style.transform = 'translateY(-2px)';
             }}
             onMouseOut={(e) => {
-              e.target.style.transform = 'translateY(0)';
+              if (!disabled) e.target.style.transform = 'translateY(0)';
             }}
           >
             {label} ({time})
