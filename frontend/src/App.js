@@ -50,6 +50,9 @@ function App() {
   const [dynamicPlaylistId, setDynamicPlaylistId] = useState(null);
   const [useDynamicPlaylist, setUseDynamicPlaylist] = useState(false);
   const [playedSongs, setPlayedSongs] = useState(new Set());
+  // New state for hidden info
+  const [revealArtist, setRevealArtist] = useState(false);
+  const [revealAlbum, setRevealAlbum] = useState(false);
 
   // ===== HELPER FUNCTIONS =====
   const cleanupDynamicPlaylist = useCallback(async (playlistId, token) => {
@@ -206,6 +209,10 @@ function App() {
       
       setUserGuess('');
       setGuessResult(null);
+      // Reset reveal states for new song
+      setRevealArtist(false);
+      setRevealAlbum(false);
+      
       setRoundsPlayed(prev => prev + 1);
       
       if (gameMode === 'endless') {
@@ -336,6 +343,8 @@ function App() {
     player.setIsPlaying(false);
     setUserGuess('');
     setGuessResult(null);
+    setRevealArtist(false);
+    setRevealAlbum(false);
     setPlayedSongs(new Set());
     setCurrentStepIndex(0);
   };
@@ -499,12 +508,26 @@ function App() {
                 </h3>
                 
                 <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                  <p style={{ fontSize: '1.1rem', margin: '5px 0' }}>
-                    <strong>Artist:</strong> {currentSong.artist}
-                  </p>
-                  <p style={{ fontSize: '1.1rem', margin: '5px 0' }}>
-                    <strong>Album:</strong> {currentSong.album}
-                  </p>
+                  <div className="hidden-info-container">
+                    <p className="hidden-info-row">
+                      <strong>Artist:</strong> 
+                      <span 
+                        className={`hidden-info-content ${revealArtist ? 'revealed' : ''}`}
+                        onClick={() => setRevealArtist(true)}
+                      >
+                        {revealArtist ? currentSong.artist : 'Click to reveal'}
+                      </span>
+                    </p>
+                    <p className="hidden-info-row">
+                      <strong>Album:</strong> 
+                      <span 
+                        className={`hidden-info-content ${revealAlbum ? 'revealed' : ''}`}
+                        onClick={() => setRevealAlbum(true)}
+                      >
+                        {revealAlbum ? currentSong.album : 'Click to reveal'}
+                      </span>
+                    </p>
+                  </div>
                 </div>
 
                 <ProgressBar 

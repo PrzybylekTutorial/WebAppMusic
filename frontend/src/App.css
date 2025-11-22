@@ -454,6 +454,69 @@
   }
 }
 
+/* Hidden Info Styles */
+.hidden-info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.hidden-info-row {
+  font-size: 1.1rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.hidden-info-content {
+  background-color: #e0e0e0;
+  color: transparent;
+  border-radius: 8px;
+  padding: 4px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s ease;
+  min-width: 120px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* "Scratch card" effect overlay text */
+.hidden-info-content::after {
+  content: "Click to reveal";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #888;
+  font-size: 0.9rem;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.hidden-info-content:hover {
+  background-color: #d0d0d0;
+}
+
+.hidden-info-content.revealed {
+  background-color: transparent;
+  color: var(--color-text-primary);
+  cursor: default;
+  user-select: text;
+  min-width: auto;
+  font-weight: 600;
+}
+
+.hidden-info-content.revealed::after {
+  content: none;
+}
+
 @media (max-width: 480px) {
   .app-title {
     font-size: 1.8rem;
