@@ -171,6 +171,8 @@
   font-family: var(--font-main);
   outline: none;
   box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  width: 100%; /* Ensure full width in grid cells */
+  box-sizing: border-box; /* Include padding in width */
 }
 
 .form-select:focus, .form-input:focus, .search-input:focus, .form-select-small:focus {
@@ -180,8 +182,6 @@
 }
 
 .search-input {
-  width: 100%;
-  box-sizing: border-box;
   margin-bottom: 10px;
 }
 
@@ -335,24 +335,45 @@
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .playlist-manager-container {
-    padding: 15px;
+    padding: 20px;
+    margin: 0 10px 30px; /* Add side margins */
   }
   
   .playlist-manager-title {
     font-size: 1.5rem;
+    flex-direction: column; /* Stack icon and text */
+    gap: 5px;
+  }
+
+  .grouped-section {
+    padding: 15px; /* Reduce padding in sections */
+  }
+  
+  .section-title {
+    font-size: 1.1rem;
+    white-space: normal; /* Allow text wrap */
   }
   
   .filter-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Force single column */
     gap: 10px;
+  }
+  
+  .form-select, .form-input, .search-input, .form-select-small {
+    width: 100%; /* Ensure full width */
   }
   
   .track-item, .search-result-item {
     flex-direction: column;
     align-items: flex-start;
-    gap: 5px;
+    gap: 8px;
     position: relative;
-    padding-right: 40px;
+    padding-right: 45px; /* Make room for delete button */
+  }
+  
+  .track-item-title {
+    font-size: 0.9rem;
+    line-height: 1.3;
   }
   
   .btn-remove-track {
@@ -361,6 +382,8 @@
     right: 10px;
     transform: translateY(-50%);
     margin: 0;
+    padding: 10px; /* Larger touch target */
+    background-color: rgba(255,255,255,0.5); /* Slight background for visibility */
   }
   
   .btn-remove-track:hover {
@@ -369,10 +392,28 @@
   
   .button-row {
     gap: 10px;
+    flex-direction: column; /* Stack buttons vertically */
   }
   
   .btn {
     width: 100%;
     justify-content: center;
+    margin: 0; /* Reset margins */
+  }
+
+  .btn-clear {
+    width: 100%;
+    justify-content: center;
+    margin-top: 5px;
+  }
+
+  .playlist-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .btn-toggle {
+    width: 100%;
   }
 }
