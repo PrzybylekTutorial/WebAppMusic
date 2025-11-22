@@ -27,7 +27,7 @@ function App() {
   const player = useSpotifyPlayer(accessToken);
 
   // ===== CONSTANTS =====
-  const PROGRESSIVE_STEPS = [100, 500, 1000, 2000, 4000, 7000, 11000, 16000, 22000, 30000];
+  const PROGRESSIVE_STEPS = [100, 500, 2000, 5000, 15000, 30000];
 
   // ===== STATE MANAGEMENT =====
   const [trackUris, setTrackUris] = useState([]);
@@ -224,16 +224,6 @@ function App() {
         const initialStep = PROGRESSIVE_STEPS[0];
         setGameModeDuration(initialStep);
         setCurrentStepIndex(0);
-        
-        // Clear any existing timeout to prevent race conditions
-        if (window.progressiveTimeout) {
-          clearTimeout(window.progressiveTimeout);
-        }
-
-        window.progressiveTimeout = setTimeout(() => {
-          if (player.localPause) player.localPause();
-          else player.handlePause();
-        }, initialStep);
       }
       
     } catch (error) {
@@ -277,12 +267,7 @@ function App() {
           const newDuration = PROGRESSIVE_STEPS[nextIndex];
           setGameModeDuration(newDuration);
           
-          player.handlePlay(currentSong.uri, currentSong.id).then(() => {
-            setTimeout(() => {
-              if (player.localPause) player.localPause();
-              else player.handlePause();
-            }, newDuration);
-          });
+          player.handlePlay(currentSong.uri, currentSong.id);
           return;
         }
       }
@@ -305,10 +290,6 @@ function App() {
         setGameModeDuration(newDuration);
         
         await player.handlePlay(currentSong.uri, currentSong.id);
-        setTimeout(() => {
-          if (player.localPause) player.localPause();
-          else player.handlePause();
-        }, newDuration);
         return;
       }
     }
@@ -541,6 +522,8 @@ function App() {
                 <ProgressBar 
                   progress={player.progress}
                   duration={gameModeDuration}
+                  maxDuration={gameMode === 'progressive' ? 30000 : null}
+                  markers={gameMode === 'progressive' ? PROGRESSIVE_STEPS : null}
                   onSeek={player.handleSeek}
                 />
 
@@ -550,10 +533,6 @@ function App() {
                     if (player.isPaused) {
                       if (gameMode === 'progressive' && player.progress >= gameModeDuration) {
                          await player.handlePlay(currentSong.uri, currentSong.id);
-                         setTimeout(() => {
-                           if (player.localPause) player.localPause();
-                           else player.handlePause();
-                         }, gameModeDuration);
                       } else {
                         player.handleResume();
                       }
@@ -563,12 +542,6 @@ function App() {
                   }}
                   restartMusic={() => {
                     player.handlePlay(currentSong.uri, currentSong.id);
-                    if (gameMode === 'progressive') {
-                      setTimeout(() => {
-                        if (player.localPause) player.localPause();
-                        else player.handlePause();
-                      }, gameModeDuration);
-                    }
                   }}
                   skipSong={skipSong}
                   progress={player.progress}

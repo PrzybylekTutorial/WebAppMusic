@@ -51,6 +51,25 @@ export const useSpotifyPlayer = (accessToken) => {
         console.error('Failed to validate Spotify account', message);
       });
 
+      player.addListener('player_state_changed', state => {
+        if (!state) return;
+        
+        setIsPlaying(!state.paused);
+        setIsPaused(state.paused);
+        
+        // Update track info if changed
+        if (state.track_window?.current_track) {
+            const track = state.track_window.current_track;
+            setCurrentTrackId(track.id);
+            setDuration(state.duration);
+        }
+        
+        // Update progress from state
+        if (state.position !== undefined) {
+            setProgress(state.position);
+        }
+      });
+
       player.connect();
     };
 
