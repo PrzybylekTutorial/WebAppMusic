@@ -375,6 +375,7 @@ function App() {
                   setDynamicPlaylistId(playlistId);
                   setUseDynamicPlaylist(true);
                 }}
+                onPlaylistUpdate={fetchTrackUris}
               />
             )}
 

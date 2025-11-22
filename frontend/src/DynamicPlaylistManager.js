@@ -37,7 +37,7 @@ const Message = ({ message, type = 'success' }) => (
   </div>
 );
 
-const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
+const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpdate }) => {
   // State management
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -156,6 +156,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
       await response.json();
       setMessage('✅ Song has been added to playlist!');
       loadPlaylistTracks();
+      if (onPlaylistUpdate) onPlaylistUpdate();
     } catch (error) {
       console.error('Error adding song:', error);
       setMessage(`Error: ${error.message}`);
@@ -223,6 +224,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated }) => {
       setSearchQuery('');
       setSearchResults([]);
       loadPlaylistTracks();
+      if (onPlaylistUpdate) onPlaylistUpdate();
     } catch (error) {
       console.error('Error adding specific song:', error);
       setMessage(`Error: ${error.message}`);
