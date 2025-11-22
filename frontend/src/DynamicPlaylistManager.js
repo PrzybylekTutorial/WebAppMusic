@@ -212,6 +212,37 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
     }
   }, [searchFilters]);
 
+  const removeTrack = useCallback(async (trackUri) => {
+    if (!accessToken || !currentPlaylistId) return;
+
+    if (!window.confirm('Are you sure you want to remove this track?')) return;
+
+    try {
+      const response = await fetch(`${SPOTIFY_API_URL}/playlists/${currentPlaylistId}/tracks`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tracks: [{ uri: trackUri }]
+        })
+      });
+
+      if (response.ok) {
+        setMessage('Track removed successfully');
+        loadPlaylistTracks();
+        if (onPlaylistUpdate) onPlaylistUpdate();
+      } else {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to remove track');
+      }
+    } catch (error) {
+      console.error('Error removing track:', error);
+      setMessage(`Error: ${error.message}`);
+    }
+  }, [accessToken, currentPlaylistId, loadPlaylistTracks, onPlaylistUpdate]);
+
   const addSpecificSongToPlaylist = useCallback(async (song) => {
     if (!currentPlaylistId || !accessToken) {
       setMessage('Please create a playlist first');
@@ -534,12 +565,24 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
             <div className="tracks-container">
               {playlistTracks.map((track, index) => (
                 <div key={track.id} className="track-item">
-                  <div className="track-item-title">
-                    {index + 1}. {track.title}
+                  <div style={{ flex: 1 }}>
+                    <div className="track-item-title">
+                      {index + 1}. {track.title}
+                    </div>
+                    <div className="track-item-artist">
+                      {track.artist} • {track.album}
+                    </div>
                   </div>
-                  <div className="track-item-artist">
-                    {track.artist} • {track.album}
-                  </div>
+                  <button 
+                    className="btn-remove-track"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeTrack(track.uri);
+                    }}
+                    title="Remove track"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               ))}
             </div>

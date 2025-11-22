@@ -272,6 +272,9 @@
   transition: all 0.2s ease;
   cursor: default;
   border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .search-result-item {
@@ -307,4 +310,24 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+}
+
+/* Remove Track Button */
+.btn-remove-track {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-remove-track:hover {
+  background-color: var(--color-state-error);
+  color: white;
+  transform: scale(1.1);
 }
