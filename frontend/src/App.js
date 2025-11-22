@@ -490,7 +490,7 @@ function App() {
               </div>
             )}
 
-            {currentSong && player.isPlaying && (
+            {currentSong && (
               <div className="now-playing-card">
                 <h3 style={{ textAlign: 'center', margin: '0 0 20px 0', color: 'var(--color-text-primary)' }}>
                    Now Playing (Round {roundsPlayed})
