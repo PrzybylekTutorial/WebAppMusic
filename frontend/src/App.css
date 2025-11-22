@@ -322,3 +322,132 @@
   border-radius: 10px;
   transition: width 0.1s linear;
 }
+
+/* New Classes for GameModeSelector & PlaylistSelector */
+.game-mode-selector, .playlist-selector {
+  margin-bottom: 30px;
+  transition: opacity 0.3s ease;
+}
+
+.section-title-center {
+  text-align: center;
+  margin-bottom: 20px;
+  color: var(--color-text-primary);
+  font-family: var(--font-headers);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.status-text-small {
+  font-size: 0.8rem;
+  font-weight: normal;
+}
+
+.mode-buttons-container {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.mode-button {
+  padding: 12px 20px;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+
+.mode-button:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .app-container {
+    margin: 20px auto;
+    padding: 15px;
+  }
+  
+  .app-title {
+    font-size: 2.2rem;
+  }
+  
+  .glass-card {
+    padding: 20px;
+  }
+  
+  .now-playing-card {
+    padding: 20px;
+  }
+  
+  .guess-form {
+    flex-direction: column;
+  }
+  
+  .guess-submit-btn {
+    width: 100%;
+    padding: 15px;
+    margin-top: 10px;
+  }
+  
+  .controls-row {
+    flex-wrap: wrap;
+  }
+  
+  .btn-control {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+  
+  .play-btn-large {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .score-item {
+    padding: 10px;
+    min-width: 80px;
+    flex: 1 1 40%;
+  }
+  
+  .score-value {
+    font-size: 1.2rem;
+  }
+
+  .mode-button {
+    flex: 1 1 45%;
+    font-size: 0.9rem;
+  }
+  
+  .mode-buttons-container {
+    gap: 10px;
+  }
+
+  .section-title-center {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-title {
+    font-size: 1.8rem;
+  }
+
+  .user-status {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .mode-button {
+    flex: 1 1 100%;
+  }
+  
+  .score-item {
+    flex: 1 1 100%;
+  }
+}

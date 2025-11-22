@@ -2,11 +2,11 @@ import React from 'react';
 
 const GameModeSelector = ({ gameMode, setGameMode, duration, setGameModeDuration, disabled }) => {
   return (
-    <div style={{ marginBottom: 30, opacity: disabled ? 0.6 : 1, transition: 'opacity 0.3s ease' }}>
-      <h3 style={{ textAlign: 'center', marginBottom: 20, color: '#333' }}>
-        🎮 Select Game Mode {disabled && <span style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>(Locked during game)</span>}
+    <div className="game-mode-selector" style={{ opacity: disabled ? 0.6 : 1 }}>
+      <h3 className="section-title-center">
+        🎮 Select Game Mode {disabled && <span className="status-text-small">(Locked during game)</span>}
       </h3>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 15, flexWrap: 'wrap' }}>
+      <div className="mode-buttons-container">
         {[
           { mode: 'normal', label: 'Normal Mode', time: '30s', color: '#28a745' },
           { mode: 'timeAttack', label: 'Time Attack', time: '15s', color: '#dc3545' },
@@ -16,6 +16,7 @@ const GameModeSelector = ({ gameMode, setGameMode, duration, setGameModeDuration
           <button 
             key={m}
             disabled={disabled}
+            className="mode-button"
             onClick={() => {
               if (disabled) return;
               setGameMode(m);
@@ -25,21 +26,8 @@ const GameModeSelector = ({ gameMode, setGameMode, duration, setGameModeDuration
               else setGameModeDuration(duration);
             }} 
             style={{ 
-              padding: '12px 20px',
               backgroundColor: gameMode === m ? color : '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: 25,
               cursor: disabled ? 'not-allowed' : 'pointer',
-              transition: 'all 0.3s ease',
-              fontWeight: 'bold',
-              boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
-            }}
-            onMouseOver={(e) => {
-              if (!disabled) e.target.style.transform = 'translateY(-2px)';
-            }}
-            onMouseOut={(e) => {
-              if (!disabled) e.target.style.transform = 'translateY(0)';
             }}
           >
             {label} ({time})
