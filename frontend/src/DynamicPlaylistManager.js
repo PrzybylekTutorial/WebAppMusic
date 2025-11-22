@@ -1,6 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getApiUrl } from './config';
 import './DynamicPlaylistManager.css';
+import { 
+  Music, 
+  Search, 
+  Filter, 
+  PlusCircle, 
+  RefreshCw, 
+  Trash2, 
+  Eye, 
+  EyeOff, 
+  CheckCircle, 
+  AlertCircle, 
+  Loader, 
+  ListMusic,
+  Shuffle
+} from 'lucide-react';
 
 // Constants
 const API_BASE_URL = '/api';
@@ -33,6 +48,7 @@ const handleApiError = async (response) => {
 // Reusable components
 const Message = ({ message, type = 'success' }) => (
   <div className={`message-box ${type === 'error' ? 'message-error' : 'message-success'}`}>
+    {type === 'error' ? <AlertCircle size={18} style={{marginRight: 8}}/> : <CheckCircle size={18} style={{marginRight: 8}}/>}
     {message}
   </div>
 );
@@ -110,7 +126,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
 
       const result = await response.json();
       setCurrentPlaylistId(result.playlist.id);
-      setMessage('✅ Playlist created successfully!');
+      setMessage('Playlist created successfully!');
       
       if (onPlaylistCreated) {
         onPlaylistCreated(result.playlist.id);
@@ -154,7 +170,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
       }
 
       await response.json();
-      setMessage('✅ Song has been added to playlist!');
+      setMessage('Song has been added to playlist!');
       loadPlaylistTracks();
       if (onPlaylistUpdate) onPlaylistUpdate();
     } catch (error) {
@@ -220,7 +236,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
       }
 
       await response.json();
-      setMessage('✅ Song has been added to playlist!');
+      setMessage('Song has been added to playlist!');
       setSearchQuery('');
       setSearchResults([]);
       loadPlaylistTracks();
@@ -323,7 +339,9 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
 
   return (
     <div className="playlist-manager-container">
-      <h3 className="playlist-manager-title">🎵 Dynamic Playlist Manager</h3>
+      <h3 className="playlist-manager-title">
+        <Music size={28} className="icon-bounce" /> Dynamic Playlist Manager
+      </h3>
 
       {/* Create Playlist Buttons */}
       <div className="button-container">
@@ -333,7 +351,8 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
             onClick={createDynamicPlaylist}
             disabled={isLoading}
           >
-            {isLoading ? '🔄 Creating...' : '🎲 Create New Playlist'}
+            {isLoading ? <Loader className="spin" size={18} /> : <ListMusic size={18} />}
+            {isLoading ? 'Creating...' : 'Create New Playlist'}
           </button>
           
           {currentPlaylistId && (
@@ -341,7 +360,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
               className="btn btn-secondary"
               onClick={resetPlaylist}
             >
-              🆕 Start Fresh
+              <RefreshCw size={18} /> Start Fresh
             </button>
           )}
         </div>
@@ -349,17 +368,17 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
 
       {/* Filters */}
       {currentPlaylistId && (
-        <div style={{ marginBottom: 20 }}>
-          <h4 className="section-title">🎯 Song Filters</h4>
+        <div style={{ marginBottom: 25 }}>
+          <h4 className="section-title"><Filter size={18} /> Song Filters</h4>
           <div className="filter-grid">
             <select
               className="form-select"
               value={filters.genre}
               onChange={(e) => setFilters(prev => ({ ...prev, genre: e.target.value }))}
             >
-              <option value="">🎵 Select Genre (All Genres)</option>
+              <option value="">Select Genre (All)</option>
               {isLoadingGenres ? (
-                <option disabled>🔄 Loading genres...</option>
+                <option disabled>Loading...</option>
               ) : (
                 availableGenres.map((genre, index) => (
                   <option key={index} value={genre}>{genre}</option>
@@ -386,8 +405,8 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
 
       {/* Search Section */}
       {currentPlaylistId && (
-        <div style={{ marginBottom: 20 }}>
-          <h4 className="section-title">🔍 Search & Add Specific Songs</h4>
+        <div style={{ marginBottom: 25 }}>
+          <h4 className="section-title"><Search size={18} /> Search & Add</h4>
           
           {/* Search Filters */}
           <div style={{ marginBottom: 15 }}>
@@ -397,14 +416,10 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
                 value={searchFilters.genre}
                 onChange={(e) => handleSearchFilterChange('genre', e.target.value)}
               >
-                <option value="">🎵 All Genres</option>
-                {isLoadingGenres ? (
-                  <option disabled>🔄 Loading...</option>
-                ) : (
-                  availableGenres.map((genre, index) => (
-                    <option key={index} value={genre}>{genre}</option>
-                  ))
-                )}
+                <option value="">All Genres</option>
+                {availableGenres.map((genre, index) => (
+                  <option key={index} value={genre}>{genre}</option>
+                ))}
               </select>
               
               <select
@@ -412,21 +427,17 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
                 value={searchFilters.artist}
                 onChange={(e) => handleSearchFilterChange('artist', e.target.value)}
               >
-                <option value="">🎤 All Artists</option>
-                {isLoadingArtists ? (
-                  <option disabled>🔄 Loading...</option>
-                ) : (
-                  availableArtists.map((artist, index) => (
-                    <option key={index} value={artist}>{artist}</option>
-                  ))
-                )}
+                <option value="">All Artists</option>
+                {availableArtists.map((artist, index) => (
+                  <option key={index} value={artist}>{artist}</option>
+                ))}
               </select>
               
               <button
                 className="btn-clear"
                 onClick={clearSearchFilters}
               >
-                🗑️ Clear Filters
+                <Trash2 size={16} /> Clear Filters
               </button>
             </div>
           </div>
@@ -435,7 +446,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
             <input
               className="search-input"
               type="text"
-              placeholder="Search for songs by title, artist, or genre..."
+              placeholder="Search by title, artist..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -447,8 +458,8 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
               }}
             />
             {isSearching && (
-              <div style={{ textAlign: 'center', color: '#666', fontSize: '0.9rem' }}>
-                🔍 Searching...
+              <div className="searching-indicator">
+                <Loader className="spin" size={16} /> Searching...
               </div>
             )}
             
@@ -456,8 +467,8 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
             {(searchFilters.genre || searchFilters.artist) && (
               <div className="active-filters">
                 <strong>Active Filters:</strong>
-                {searchFilters.genre && <span style={{ marginLeft: 8 }}>🎵 {searchFilters.genre}</span>}
-                {searchFilters.artist && <span style={{ marginLeft: 8 }}>🎤 {searchFilters.artist}</span>}
+                {searchFilters.genre && <span>🎵 {searchFilters.genre}</span>}
+                {searchFilters.artist && <span>🎤 {searchFilters.artist}</span>}
               </div>
             )}
           </div>
@@ -471,10 +482,10 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
                   className="search-result-item"
                   onClick={() => addSpecificSongToPlaylist(song)}
                 >
-                  <div style={{ fontWeight: 'bold', color: '#333', marginBottom: 4 }}>
+                  <div style={{ fontWeight: 'bold', color: 'var(--color-text-primary)', marginBottom: 4 }}>
                     {song.title}
                   </div>
-                  <div style={{ color: '#666', fontSize: '0.9rem', marginBottom: 2 }}>
+                  <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginBottom: 2 }}>
                     {song.artist}
                   </div>
                   <div style={{ color: '#888', fontSize: '0.8rem' }}>
@@ -491,11 +502,12 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
       {currentPlaylistId && (
         <div className="button-container">
           <button
-            className="btn-add"
+            className="btn btn-add"
             onClick={addRandomSongFromDatabase}
             disabled={isLoading}
           >
-            {isLoading ? '🔄 Adding...' : '➕ Add More Songs to Playlist'}
+            {isLoading ? <Loader className="spin" size={18} /> : <Shuffle size={18} />}
+            {isLoading ? 'Adding...' : 'Add Random Song'}
           </button>
         </div>
       )}
@@ -512,11 +524,11 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
       {playlistTracks.length > 0 && (
         <div>
           <div className="playlist-header" onClick={() => setShowPlaylistTracks(!showPlaylistTracks)}>
-            <h4 style={{ margin: 0, color: '#333' }}>
-              📋 Playlist Tracks ({playlistTracks.length})
+            <h4 style={{ margin: 0, color: 'var(--color-text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <ListMusic size={18} /> Playlist Tracks ({playlistTracks.length})
             </h4>
             <button className="btn-toggle">
-              {showPlaylistTracks ? '👁️ Hide Tracks' : '👁️ Show Tracks'}
+              {showPlaylistTracks ? <><EyeOff size={14} style={{marginRight: 5}} /> Hide</> : <><Eye size={14} style={{marginRight: 5}} /> Show</>}
             </button>
           </div>
           
