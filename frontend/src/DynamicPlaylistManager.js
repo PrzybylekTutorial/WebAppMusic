@@ -368,7 +368,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
 
       {/* Filters */}
       {currentPlaylistId && (
-        <div style={{ marginBottom: 25 }}>
+        <div className="grouped-section">
           <h4 className="section-title"><Filter size={18} /> Song Filters</h4>
           <div className="filter-grid">
             <select
@@ -405,7 +405,7 @@ const DynamicPlaylistManager = ({ accessToken, onPlaylistCreated, onPlaylistUpda
 
       {/* Search Section */}
       {currentPlaylistId && (
-        <div style={{ marginBottom: 25 }}>
+        <div className="grouped-section">
           <h4 className="section-title"><Search size={18} /> Search & Add</h4>
           
           {/* Search Filters */}
