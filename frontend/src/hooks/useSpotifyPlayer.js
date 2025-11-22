@@ -19,27 +19,55 @@ export const useSpotifyPlayer = (accessToken) => {
   useEffect(() => {
     if (!accessToken) return;
 
-    const script = document.createElement('script');
-    script.src = 'https://sdk.scdn.co/spotify-player.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    window.onSpotifyWebPlaybackSDKReady = () => {
+    const initializePlayer = () => {
       const player = new window.Spotify.Player({
         name: 'Web Playback SDK',
         getOAuthToken: cb => { cb(accessToken); },
         volume: 0.5
       });
+
       player.addListener('ready', ({ device_id }) => {
         console.log('Ready with Device ID', device_id);
         setDeviceId(device_id);
       });
+
+      player.addListener('not_ready', ({ device_id }) => {
+        console.log('Device ID has gone offline', device_id);
+        setDeviceId(null);
+      });
+
+      player.addListener('initialization_error', ({ message }) => {
+        console.error('Failed to initialize', message);
+      });
+
+      player.addListener('authentication_error', ({ message }) => {
+        console.error('Failed to authenticate', message);
+      });
+
+      player.addListener('account_error', ({ message }) => {
+        console.error('Failed to validate Spotify account', message);
+      });
+
       player.connect();
     };
 
-    return () => {
-      delete window.onSpotifyWebPlaybackSDKReady;
-    };
+    if (window.Spotify) {
+      initializePlayer();
+    } else {
+      window.onSpotifyWebPlaybackSDKReady = initializePlayer;
+      
+      if (!document.getElementById('spotify-player-script')) {
+        const script = document.createElement('script');
+        script.id = 'spotify-player-script';
+        script.src = 'https://sdk.scdn.co/spotify-player.js';
+        script.async = true;
+        document.body.appendChild(script);
+      }
+    }
+
+    // Cleanup function not needed for script tag as we check for ID, 
+    // but we might want to disconnect player on unmount if we had access to the player instance.
+    // For now, this simple implementation is sufficient.
   }, [accessToken]);
 
   const updateProgress = useCallback(async () => {

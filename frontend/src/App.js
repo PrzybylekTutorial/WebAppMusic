@@ -373,6 +373,17 @@ function App() {
               />
             )}
 
+            {accessToken && !player.deviceId && (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#666', backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: '10px', marginBottom: '20px' }}>
+                <h3>⏳ Initializing Spotify Player...</h3>
+                <p>Waiting for Spotify Web Playback SDK to be ready.</p>
+                <p style={{ fontSize: '0.9rem', marginTop: '10px' }}>
+                  ⚠️ If this takes too long, please check if your browser supports DRM (Widevine). 
+                  <br/>Note: This may not work in embedded browsers or some private windows.
+                </p>
+              </div>
+            )}
+
             {player.deviceId && (
               <PlaylistSelector 
                 useDynamicPlaylist={useDynamicPlaylist}
