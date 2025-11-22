@@ -30,8 +30,11 @@ const ProgressBar = ({ progress, duration, maxDuration, markers, onSeek }) => {
     onSeek(allowedTime);
   };
 
-  const percent = Math.min((progress / effectiveDuration) * 100, 100);
   const limitPercent = maxDuration ? (duration / effectiveDuration) * 100 : 100;
+  
+  // Clamp progress to the limit if maxDuration is set
+  const safeProgress = maxDuration ? Math.min(progress, duration) : progress;
+  const percent = Math.min((safeProgress / effectiveDuration) * 100, 100);
 
   return (
     <div style={{ marginBottom: 20 }}>

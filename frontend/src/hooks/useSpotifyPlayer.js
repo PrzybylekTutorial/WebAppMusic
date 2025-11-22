@@ -15,6 +15,7 @@ export const useSpotifyPlayer = (accessToken) => {
   const [duration, setDuration] = useState(0);
   const [currentTrackId, setCurrentTrackId] = useState(null);
   const playerRef = useRef(null);
+  const lastStateRef = useRef({ position: 0, time: Date.now() });
 
   // Initialize Player
   useEffect(() => {
@@ -54,7 +55,8 @@ export const useSpotifyPlayer = (accessToken) => {
       player.addListener('player_state_changed', state => {
         if (!state) return;
         
-        setIsPlaying(!state.paused);
+        const isNowPlaying = !state.paused;
+        setIsPlaying(isNowPlaying);
         setIsPaused(state.paused);
         
         // Update track info if changed
@@ -66,6 +68,10 @@ export const useSpotifyPlayer = (accessToken) => {
         
         // Update progress from state
         if (state.position !== undefined) {
+            lastStateRef.current = { 
+                position: state.position, 
+                time: Date.now() 
+            };
             setProgress(state.position);
         }
       });
@@ -86,46 +92,37 @@ export const useSpotifyPlayer = (accessToken) => {
         document.body.appendChild(script);
       }
     }
-
-    // Cleanup function not needed for script tag as we check for ID, 
-    // but we might want to disconnect player on unmount if we had access to the player instance.
-    // For now, this simple implementation is sufficient.
   }, [accessToken]);
 
-  const updateProgress = useCallback(async () => {
-    if (!accessToken || !deviceId || !currentTrackId) return;
-    
-    try {
-      const data = await getCurrentPlayback(accessToken);
-      
-      if (data && data.is_playing && data.item && data.item.id === currentTrackId) {
-        setProgress(data.progress_ms || 0);
-        setDuration(data.item.duration_ms || 0);
-      }
-    } catch (error) {
-      console.error('Error updating progress:', error);
-    }
-  }, [accessToken, deviceId, currentTrackId]);
-
+  // Polling logic using requestAnimationFrame for smooth UI without conflicts
   useEffect(() => {
-    let interval = null;
-    let localUpdateInterval = null;
+    let animationFrameId;
+    
+    const update = () => {
+      if (isPlaying && !isPaused) {
+        const now = Date.now();
+        const { position, time } = lastStateRef.current;
+        // Calculate estimated progress: Last confirmed position + time elapsed since then
+        const estimatedProgress = position + (now - time);
+        
+        // Don't exceed duration
+        const cappedProgress = duration > 0 ? Math.min(estimatedProgress, duration) : estimatedProgress;
+        
+        setProgress(cappedProgress);
+        animationFrameId = requestAnimationFrame(update);
+      }
+    };
 
-    if (currentTrackId && isPlaying && !isPaused) {
-      // Sync with Spotify API every 3 seconds to correct drift
-      interval = setInterval(updateProgress, 3000);
-
-      // Locally update progress every 100ms for smooth UI
-      localUpdateInterval = setInterval(() => {
-        setProgress(prev => prev + 100);
-      }, 100);
+    if (isPlaying && !isPaused) {
+      animationFrameId = requestAnimationFrame(update);
     }
 
     return () => {
-      clearInterval(interval);
-      clearInterval(localUpdateInterval);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
     };
-  }, [currentTrackId, isPlaying, isPaused, updateProgress]);
+  }, [isPlaying, isPaused, duration]);
 
   const handlePlay = async (uri, trackId) => {
     if (!accessToken || !deviceId) return;
@@ -134,6 +131,8 @@ export const useSpotifyPlayer = (accessToken) => {
       setIsPlaying(true);
       setIsPaused(false);
       setCurrentTrackId(trackId);
+      // Reset interpolation state
+      lastStateRef.current = { position: 0, time: Date.now() };
       setProgress(0);
     } catch (error) {
       console.error('Error playing track:', error);
@@ -156,6 +155,8 @@ export const useSpotifyPlayer = (accessToken) => {
     try {
       await resumePlayback(accessToken, deviceId);
       setIsPaused(false);
+      // Update reference time to avoid jumps on resume
+      lastStateRef.current = { position: progress, time: Date.now() };
     } catch (error) {
       console.error('Error resuming:', error);
     }
@@ -165,6 +166,7 @@ export const useSpotifyPlayer = (accessToken) => {
     if (!accessToken || !deviceId) return;
     try {
       await seekToPosition(accessToken, deviceId, position);
+      lastStateRef.current = { position: position, time: Date.now() };
       setProgress(position);
     } catch (error) {
       console.error('Error seeking:', error);
@@ -195,4 +197,3 @@ export const useSpotifyPlayer = (accessToken) => {
     localPause
   };
 };
-
