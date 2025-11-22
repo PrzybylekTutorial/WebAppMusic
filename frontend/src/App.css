@@ -1,38 +1,102 @@
-.App {
+.app-container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.app-header {
   text-align: center;
+  margin-bottom: 40px;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.app-title {
+  font-size: var(--sizes-h1, 3rem);
+  font-weight: 800;
+  margin: 0;
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.05);
+  letter-spacing: -1px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.app-subtitle {
+  color: var(--color-text-secondary);
+  font-size: 1.2rem;
+  margin-top: 10px;
+  font-weight: 600;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.user-status {
+  text-align: center;
+  margin-bottom: 30px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
+  gap: 15px;
+  color: var(--color-text-secondary);
+}
+
+.logout-btn {
+  padding: 8px 20px;
+  font-size: 0.9rem;
+  background-color: var(--color-state-error);
   color: white;
+  border: none;
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 700;
 }
 
-.App-link {
-  color: #61dafb;
+.logout-btn:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.game-section {
+  margin-top: 30px;
+}
+
+.now-playing-card {
+  background: rgba(255, 255, 255, 0.6);
+  padding: 30px;
+  border-radius: 25px;
+  box-shadow: var(--shadow-soft);
+  border: 2px solid var(--color-primary-mint);
+  margin-bottom: 30px;
+}
+
+.play-btn-large {
+  padding: 20px 50px;
+  font-size: 1.4rem;
+  background-color: var(--color-primary-mint);
+  color: var(--color-text-primary);
+  border: none;
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(181, 234, 215, 0.5);
+  transition: all 0.3s ease;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.play-btn-large:hover:not(:disabled) {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 15px 35px rgba(181, 234, 215, 0.6);
+}
+
+.play-btn-large:disabled {
+  background-color: var(--color-text-disabled);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.reset-btn-container {
+  text-align: center;
+  margin-bottom: 30px;
+  margin-top: 20px;
 }

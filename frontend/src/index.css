@@ -1,13 +1,117 @@
+:root {
+  /* Palette */
+  --color-primary-pink: #FFB7B2;
+  --color-primary-mint: #B5EAD7;
+  
+  --color-accent-lavender: #C7CEEA;
+  --color-accent-peach: #FFDAC1;
+  --color-accent-lime: #E2F0CB;
+  
+  --color-bg-body: #FDFBF7;
+  --color-bg-card: rgba(255, 255, 255, 0.90);
+  --color-bg-glass: rgba(255, 255, 255, 0.65);
+  
+  --color-text-primary: #4A4A4A;
+  --color-text-secondary: #888888;
+  --color-text-disabled: #D3D3D3;
+
+  --color-state-success: #B5EAD7;
+  --color-state-error: #FF6961;
+  --color-state-active: #FF9AA2;
+
+  /* Typography */
+  --font-main: 'Nunito', sans-serif;
+  --font-headers: 'Quicksand', sans-serif;
+
+  /* Effects */
+  --shadow-soft: 0 20px 60px rgba(181, 234, 215, 0.25);
+  --shadow-hover: 0 25px 70px rgba(181, 234, 215, 0.35);
+  --glass-blur: blur(20px);
+  --radius-card: 30px;
+  --radius-button: 50px;
+  
+  /* Gradients */
+  --gradient-bg: linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%);
+  --gradient-text: linear-gradient(45deg, #C7CEEA, #FF9AA2);
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-main);
+  background: var(--gradient-bg);
+  background-attachment: fixed;
+  color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-headers);
+  color: var(--color-text-primary);
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* Utility Classes for Buttons */
+.btn-primary {
+  background-color: var(--color-primary-mint);
+  color: var(--color-text-primary);
+  border: none;
+  border-radius: var(--radius-button);
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(181, 234, 215, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+  background-color: #a3e6ce; /* Slightly darker mint */
+}
+
+.btn-primary:disabled {
+  background-color: #E0E0E0;
+  color: #A0A0A0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background-color: var(--color-accent-peach);
+  color: var(--color-text-primary);
+  border: none;
+  border-radius: var(--radius-button);
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  filter: brightness(0.95);
+}
+
+.glass-card {
+  background: var(--color-bg-card);
+  backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-card);
+  padding: 40px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+input[type="text"] {
+  font-family: var(--font-main);
 }
