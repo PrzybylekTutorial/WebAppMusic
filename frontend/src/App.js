@@ -520,7 +520,7 @@ function App() {
                 </div>
 
                 <ProgressBar 
-                  progress={player.progress}
+                  progress={gameMode === 'progressive' ? Math.min(player.progress, gameModeDuration) : player.progress}
                   duration={gameModeDuration}
                   maxDuration={gameMode === 'progressive' ? 30000 : null}
                   markers={gameMode === 'progressive' ? PROGRESSIVE_STEPS : null}
@@ -531,10 +531,33 @@ function App() {
                   isPaused={player.isPaused}
                   togglePlayPause={async () => {
                     if (player.isPaused) {
-                      if (gameMode === 'progressive' && player.progress >= gameModeDuration) {
+                      const tolerance = 200; // 200ms tolerance for "end of segment"
+                      const isEndOfSegment = gameMode === 'progressive' && 
+                                           player.progress >= (gameModeDuration - tolerance);
+                                           
+                      if (isEndOfSegment) {
+                         // Restart segment if we are at/near the end
                          await player.handlePlay(currentSong.uri, currentSong.id);
+                         
+                         // Set precise timeout to stop exactly at duration
+                         setTimeout(() => {
+                            if (player.localPause) player.localPause();
+                            else player.handlePause();
+                         }, gameModeDuration);
                       } else {
+                        // Just resume if we are in the middle
                         player.handleResume();
+                        
+                        // If resuming in progressive mode, still need to stop at the limit
+                        if (gameMode === 'progressive') {
+                            const remainingTime = gameModeDuration - player.progress;
+                            if (remainingTime > 0) {
+                                setTimeout(() => {
+                                    if (player.localPause) player.localPause();
+                                    else player.handlePause();
+                                }, remainingTime);
+                            }
+                        }
                       }
                     } else {
                       player.handlePause();
@@ -542,6 +565,13 @@ function App() {
                   }}
                   restartMusic={() => {
                     player.handlePlay(currentSong.uri, currentSong.id);
+                    // Also schedule stop for progressive mode on manual restart
+                    if (gameMode === 'progressive') {
+                        setTimeout(() => {
+                            if (player.localPause) player.localPause();
+                            else player.handlePause();
+                        }, gameModeDuration);
+                    }
                   }}
                   skipSong={skipSong}
                   progress={player.progress}

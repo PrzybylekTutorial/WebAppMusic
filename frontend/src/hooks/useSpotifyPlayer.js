@@ -127,15 +127,21 @@ export const useSpotifyPlayer = (accessToken) => {
   const handlePlay = async (uri, trackId) => {
     if (!accessToken || !deviceId) return;
     try {
-      await playTrack(accessToken, deviceId, uri);
+      // Optimistic update
       setIsPlaying(true);
       setIsPaused(false);
+      
+      await playTrack(accessToken, deviceId, uri);
+      
       setCurrentTrackId(trackId);
       // Reset interpolation state
       lastStateRef.current = { position: 0, time: Date.now() };
       setProgress(0);
     } catch (error) {
       console.error('Error playing track:', error);
+      // Revert optimistic update on error
+      setIsPlaying(false);
+      setIsPaused(true);
       throw error;
     }
   };
@@ -143,22 +149,35 @@ export const useSpotifyPlayer = (accessToken) => {
   const handlePause = async () => {
     if (!accessToken || !deviceId) return;
     try {
-      await pausePlayback(accessToken, deviceId);
+      // Optimistic update
       setIsPaused(true);
+      setIsPlaying(false);
+      
+      await pausePlayback(accessToken, deviceId);
     } catch (error) {
       console.error('Error pausing:', error);
+      // Revert
+      setIsPaused(false);
+      setIsPlaying(true);
     }
   };
 
   const handleResume = async () => {
     if (!accessToken || !deviceId) return;
     try {
-      await resumePlayback(accessToken, deviceId);
+      // Optimistic update
       setIsPaused(false);
+      setIsPlaying(true);
+      
+      await resumePlayback(accessToken, deviceId);
+      
       // Update reference time to avoid jumps on resume
       lastStateRef.current = { position: progress, time: Date.now() };
     } catch (error) {
       console.error('Error resuming:', error);
+      // Revert
+      setIsPaused(true);
+      setIsPlaying(false);
     }
   };
 
