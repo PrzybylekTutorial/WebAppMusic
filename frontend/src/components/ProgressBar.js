@@ -52,18 +52,18 @@ const ProgressBar = ({ progress, duration, maxDuration, markers, onSeek }) => {
           style={{
             position: 'absolute',
             left: `${limitPercent}%`,
-            top: -5, // Adjust to sit above the bar
+            top: -5, 
             transform: 'translateX(-50%)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             zIndex: 10,
-            pointerEvents: 'none', // Click through to bar
+            pointerEvents: 'none',
             transition: 'left 0.3s ease'
           }}
         >
            <div style={{ 
-             backgroundColor: 'var(--color-background)', // Or card background
+             backgroundColor: 'var(--color-background)',
              padding: '2px 6px',
              borderRadius: 4,
              fontSize: '0.85rem',
@@ -79,7 +79,7 @@ const ProgressBar = ({ progress, duration, maxDuration, markers, onSeek }) => {
              height: 0,
              borderLeft: '5px solid transparent',
              borderRight: '5px solid transparent',
-             borderTop: '6px solid var(--color-text-primary)', // Or match text color
+             borderTop: '6px solid var(--color-text-primary)',
              marginTop: 2
            }} />
         </div>
@@ -89,7 +89,7 @@ const ProgressBar = ({ progress, duration, maxDuration, markers, onSeek }) => {
         className="progress-container" 
         onClick={handleSeek}
         ref={barRef}
-        style={{ position: 'relative', overflow: 'visible' }} // Visible to allow markers to extend if needed? No, labels are outside.
+        style={{ position: 'relative', overflow: 'visible' }}
       >
         {/* Active Playable Area Background */}
         {maxDuration && (
@@ -128,7 +128,7 @@ const ProgressBar = ({ progress, duration, maxDuration, markers, onSeek }) => {
                 style={{
                     position: 'absolute',
                     left: `${limitPercent}%`,
-                    top: -2, // Extend slightly
+                    top: -2,
                     bottom: -2,
                     width: 2,
                     backgroundColor: '#e74c3c',
@@ -138,9 +138,14 @@ const ProgressBar = ({ progress, duration, maxDuration, markers, onSeek }) => {
             />
         )}
 
+        {/* Progress Fill with CSS transition for smoothness */}
         <div 
           className="progress-fill" 
-          style={{ width: `${percent}%`, zIndex: 3 }}
+          style={{ 
+            width: `${percent}%`, 
+            zIndex: 3,
+            transition: 'width 0.1s linear' // Add smooth linear interpolation
+          }}
         />
       </div>
     </div>
