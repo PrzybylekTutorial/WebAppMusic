@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   playTrack, 
   pausePlayback, 
@@ -14,6 +14,7 @@ export const useSpotifyPlayer = (accessToken) => {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentTrackId, setCurrentTrackId] = useState(null);
+  const playerRef = useRef(null);
 
   // Initialize Player
   useEffect(() => {
@@ -25,6 +26,8 @@ export const useSpotifyPlayer = (accessToken) => {
         getOAuthToken: cb => { cb(accessToken); },
         volume: 0.5
       });
+
+      playerRef.current = player;
 
       player.addListener('ready', ({ device_id }) => {
         console.log('Ready with Device ID', device_id);
@@ -137,6 +140,13 @@ export const useSpotifyPlayer = (accessToken) => {
     }
   };
 
+  const localPause = async () => {
+    if (playerRef.current) {
+      await playerRef.current.pause();
+      setIsPaused(true);
+    }
+  };
+
   return {
     deviceId,
     isPlaying,
@@ -150,7 +160,8 @@ export const useSpotifyPlayer = (accessToken) => {
     handlePlay,
     handlePause,
     handleResume,
-    handleSeek
+    handleSeek,
+    localPause
   };
 };
 

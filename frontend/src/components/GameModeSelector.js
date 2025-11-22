@@ -10,7 +10,8 @@ const GameModeSelector = ({ gameMode, setGameMode, duration, setGameModeDuration
         {[
           { mode: 'normal', label: 'Normal Mode', time: '30s', color: '#28a745' },
           { mode: 'timeAttack', label: 'Time Attack', time: '15s', color: '#dc3545' },
-          { mode: 'endless', label: 'Endless Mode', time: 'Full Song', color: '#007bff' }
+          { mode: 'endless', label: 'Endless Mode', time: 'Full Song', color: '#007bff' },
+          { mode: 'progressive', label: 'Songless Mode', time: 'Progressive', color: '#9b59b6' }
         ].map(({ mode: m, label, time, color }) => (
           <button 
             key={m}
@@ -18,6 +19,7 @@ const GameModeSelector = ({ gameMode, setGameMode, duration, setGameModeDuration
               setGameMode(m);
               if (m === 'normal') setGameModeDuration(30000);
               else if (m === 'timeAttack') setGameModeDuration(15000);
+              else if (m === 'progressive') setGameModeDuration(100);
               else setGameModeDuration(duration);
             }} 
             style={{ 

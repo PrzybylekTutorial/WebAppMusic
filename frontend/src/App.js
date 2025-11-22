@@ -23,6 +23,9 @@ function App() {
   const { accessToken, authLoading, logout, rememberMe } = useAuth();
   const player = useSpotifyPlayer(accessToken);
 
+  // ===== CONSTANTS =====
+  const PROGRESSIVE_STEPS = [100, 500, 1000, 2000, 4000, 7000, 11000, 16000, 22000, 30000];
+
   // ===== STATE MANAGEMENT =====
   const [trackUris, setTrackUris] = useState([]);
   const [currentSong, setCurrentSong] = useState(null);
@@ -36,6 +39,7 @@ function App() {
   const [highScore, setHighScore] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [gameModeDuration, setGameModeDuration] = useState(30000);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0); // For progressive/songless mode
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -127,7 +131,7 @@ function App() {
   useEffect(() => {
     if (player.progress >= gameModeDuration && player.isPlaying) {
       player.handlePause();
-      if (currentSong && !guessResult) {
+      if (gameMode !== 'progressive' && currentSong && !guessResult) {
         setGuessResult({
           correct: false,
           actualTitle: currentSong.title
@@ -136,9 +140,24 @@ function App() {
         setTotalGuesses(prev => prev + 1);
       }
     }
-  }, [player.progress, gameModeDuration, player.isPlaying, currentSong, guessResult, player]);
+  }, [player.progress, gameModeDuration, player.isPlaying, currentSong, guessResult, player, gameMode]);
 
   // ===== GAMEPLAY FUNCTIONS =====
+  const playProgressiveSnippet = useCallback(async (durationMs) => {
+    if (!player.deviceId) return;
+    
+    // We use handlePlay to ensure it starts from beginning or use seek if already loaded?
+    // handlePlay with URI restarts it. 
+    // But we need to handle the pause timing.
+    
+    // For consistency, we'll rely on the fact that handlePlay (or restart) was called.
+    // But here we are just handling the "Play" button action for progressive mode?
+    // Actually, this function is for "Replaying" or "Playing" the snippet.
+    
+    // Wait, playRandomSong sets up the NEW song.
+    // This function is for when we need to play the current snippet again.
+  }, [player]);
+
   const playRandomSong = async () => {
     if (!accessToken || !player.deviceId || trackUris.length === 0) return;
     setIsLoading(true);
@@ -166,8 +185,18 @@ function App() {
       setUserGuess('');
       setGuessResult(null);
       setRoundsPlayed(prev => prev + 1);
+      
       if (gameMode === 'endless') {
         setGameModeDuration(songData.duration_ms || 0);
+      } else if (gameMode === 'progressive') {
+        const initialStep = PROGRESSIVE_STEPS[0];
+        setGameModeDuration(initialStep);
+        setCurrentStepIndex(0);
+        
+        setTimeout(() => {
+          if (player.localPause) player.localPause();
+          else player.handlePause();
+        }, initialStep);
       }
       
     } catch (error) {
@@ -196,18 +225,66 @@ function App() {
         if (newStreak > bestStreak) setBestStreak(newStreak);
         return newStreak;
       });
+      
+      setGuessResult({
+        correct: true,
+        actualTitle: currentSong.title
+      });
     } else {
       setStreak(0);
+      
+      if (gameMode === 'progressive') {
+        const nextIndex = currentStepIndex + 1;
+        if (nextIndex < PROGRESSIVE_STEPS.length) {
+          // Advance to next step
+          setCurrentStepIndex(nextIndex);
+          const newDuration = PROGRESSIVE_STEPS[nextIndex];
+          setGameModeDuration(newDuration);
+          
+          // Automatically play the new longer snippet
+          player.handlePlay(currentSong.uri, currentSong.id).then(() => {
+            setTimeout(() => {
+              if (player.localPause) player.localPause();
+              else player.handlePause();
+            }, newDuration);
+          });
+          
+          // Don't show result yet, just feedback that it was wrong? 
+          // Or maybe we should show "Wrong, +1s added" toast? 
+          // For now, just expanding the time is the feedback.
+          return;
+        }
+      }
+      
+      setGuessResult({
+        correct: false,
+        actualTitle: currentSong.title
+      });
     }
-    
-    setGuessResult({
-      correct: isCorrect,
-      actualTitle: currentSong.title
-    });
   };
 
   const skipSong = async () => {
     if (!accessToken || !player.deviceId || trackUris.length === 0) return;
+    
+    if (gameMode === 'progressive' && currentSong && !guessResult) {
+      const nextIndex = currentStepIndex + 1;
+      if (nextIndex < PROGRESSIVE_STEPS.length) {
+        // Advance to next step instead of skipping song
+        setCurrentStepIndex(nextIndex);
+        const newDuration = PROGRESSIVE_STEPS[nextIndex];
+        setGameModeDuration(newDuration);
+        
+        // Play new longer snippet
+        await player.handlePlay(currentSong.uri, currentSong.id);
+        setTimeout(() => {
+          if (player.localPause) player.localPause();
+          else player.handlePause();
+        }, newDuration);
+        return;
+      }
+      // If last step, fall through to normal skip (which reveals/fails)
+    }
+
     try {
       // We don't need to explicitly pause, playRandomSong will handle the new track
       // await player.handlePause(); 
@@ -246,6 +323,7 @@ function App() {
     setUserGuess('');
     setGuessResult(null);
     setPlayedSongs(new Set());
+    setCurrentStepIndex(0);
   };
 
   // Search/Suggestions logic
@@ -479,12 +557,38 @@ function App() {
 
                 <GameControls 
                   isPaused={player.isPaused}
-                  togglePlayPause={player.isPaused ? player.handleResume : player.handlePause}
-                  restartMusic={() => player.handlePlay(currentSong.uri, currentSong.id)}
+                  togglePlayPause={async () => {
+                    if (player.isPaused) {
+                      if (gameMode === 'progressive' && player.progress >= gameModeDuration) {
+                         // If we are at the end of the snippet, replay from start
+                         await player.handlePlay(currentSong.uri, currentSong.id);
+                         setTimeout(() => {
+                           if (player.localPause) player.localPause();
+                           else player.handlePause();
+                         }, gameModeDuration);
+                      } else {
+                        player.handleResume();
+                      }
+                    } else {
+                      player.handlePause();
+                    }
+                  }}
+                  restartMusic={() => {
+                    player.handlePlay(currentSong.uri, currentSong.id);
+                    if (gameMode === 'progressive') {
+                      setTimeout(() => {
+                        if (player.localPause) player.localPause();
+                        else player.handlePause();
+                      }, gameModeDuration);
+                    }
+                  }}
                   skipSong={skipSong}
                   progress={player.progress}
                   gameModeDuration={gameModeDuration}
                   gameMode={gameMode}
+                  currentStepIndex={currentStepIndex}
+                  totalSteps={PROGRESSIVE_STEPS.length}
+                  progressiveSteps={PROGRESSIVE_STEPS}
                 />
 
                 <div style={{ marginTop: 20 }}>
