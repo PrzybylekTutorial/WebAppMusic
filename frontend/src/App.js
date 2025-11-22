@@ -304,28 +304,29 @@ function App() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%)',
       padding: '20px',
-      fontFamily: 'Arial, sans-serif'
+      fontFamily: 'Arial, sans-serif',
+      color: '#555555'
     }}>
       <div style={{ 
         maxWidth: 800, 
         margin: '0 auto', 
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: 'rgba(255, 255, 255, 0.85)',
         borderRadius: 20,
         padding: 30,
-        boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-        backdropFilter: 'blur(10px)'
+        boxShadow: '0 20px 40px rgba(0,0,0,0.05)',
+        backdropFilter: 'blur(15px)'
       }}>
         <div style={{ textAlign: 'center', marginBottom: 30 }}>
           <h1 style={{ 
             fontSize: '3rem', 
             fontWeight: 'bold', 
-            background: 'linear-gradient(45deg, #667eea, #764ba2)',
+            background: 'linear-gradient(45deg, #C7CEEA, #FF9AA2)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             margin: 0,
-            textShadow: '2px 2px 4px rgba(0,0,0,0.1)'
+            textShadow: '2px 2px 4px rgba(0,0,0,0.05)'
           }}>
              Song Guess Game 🎵
           </h1>
@@ -415,12 +416,12 @@ function App() {
                   style={{
                     padding: '20px 40px',
                     fontSize: '1.3rem',
-                    backgroundColor: isLoading ? '#6c757d' : '#1DB954',
-                    color: 'white',
+                    backgroundColor: isLoading ? '#d3d3d3' : '#B5EAD7',
+                    color: isLoading ? '#888' : '#555555',
                     border: 'none',
                     borderRadius: 50,
                     cursor: isLoading ? 'not-allowed' : 'pointer',
-                    boxShadow: '0 8px 16px rgba(29, 185, 84, 0.3)',
+                    boxShadow: '0 8px 16px rgba(181, 234, 215, 0.4)',
                     transition: 'all 0.3s ease',
                     fontWeight: 'bold'
                   }}
@@ -436,11 +437,12 @@ function App() {
                   onClick={resetGame} 
                   style={{
                     padding: '10px 20px',
-                    backgroundColor: '#6c757d',
-                    color: 'white',
+                    backgroundColor: '#FFDAC1',
+                    color: '#555555',
                     border: 'none',
                     borderRadius: 25,
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
                   }}
                 >
                   🔄 Reset Game
@@ -450,11 +452,11 @@ function App() {
 
             {currentSong && player.isPlaying && (
               <div style={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
                 padding: 25,
                 borderRadius: 15,
-                boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-                border: '2px solid #1DB954'
+                boxShadow: '0 8px 16px rgba(0,0,0,0.05)',
+                border: '2px solid #B5EAD7'
               }}>
                 <h3 style={{ textAlign: 'center', margin: '0 0 20px 0', color: '#333' }}>
                    Now Playing (Round {roundsPlayed})

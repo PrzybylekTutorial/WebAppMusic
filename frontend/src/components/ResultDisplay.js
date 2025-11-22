@@ -8,19 +8,19 @@ const ResultDisplay = ({ result, onPlayAgain }) => {
       marginTop: 20, 
       padding: 20, 
       borderRadius: 15, 
-      backgroundColor: result.correct ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
-      border: `2px solid ${result.correct ? '#28a745' : '#dc3545'}`,
+      backgroundColor: result.correct ? '#E2F0CB' : '#FFDEE9',
+      border: `2px solid ${result.correct ? '#B5EAD7' : '#FF9AA2'}`,
       textAlign: 'center'
     }}>
       {result.correct ? (
-        <div style={{ color: '#28a745' }}>
+        <div style={{ color: '#555555' }}>
           <div style={{ fontSize: '2rem', marginBottom: 10 }}>🎉</div>
           <p style={{ fontSize: '1.2rem', fontWeight: 'bold', margin: 0 }}>
             Correct! The song is "{result.actualTitle}"
           </p>
         </div>
       ) : (
-        <div style={{ color: '#dc3545' }}>
+        <div style={{ color: '#555555' }}>
           <div style={{ fontSize: '2rem', marginBottom: 10 }}>❌</div>
           <p style={{ fontSize: '1.2rem', fontWeight: 'bold', margin: 0 }}>
             Incorrect. The song is "{result.actualTitle}"
@@ -32,23 +32,24 @@ const ResultDisplay = ({ result, onPlayAgain }) => {
         onClick={onPlayAgain} 
         style={{ 
           padding: '12px 25px',
-          backgroundColor: '#1DB954',
-          color: 'white',
+          backgroundColor: '#C7CEEA',
+          color: '#555555',
           border: 'none',
           borderRadius: 25,
           cursor: 'pointer',
           fontSize: '1rem',
           fontWeight: 'bold',
           marginTop: 15,
-          transition: 'all 0.3s ease'
+          transition: 'all 0.3s ease',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.05)'
         }}
         onMouseOver={(e) => {
-          e.target.style.transform = 'translateY(-1px)';
-          e.target.style.boxShadow = '0 4px 8px rgba(29, 185, 84, 0.3)';
+          e.target.style.transform = 'translateY(-2px)';
+          e.target.style.boxShadow = '0 6px 12px rgba(0,0,0,0.1)';
         }}
         onMouseOut={(e) => {
           e.target.style.transform = 'translateY(0)';
-          e.target.style.boxShadow = 'none';
+          e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.05)';
         }}
       >
          Play Another Song

@@ -13,19 +13,22 @@ const GameControls = ({ isPaused, togglePlayPause, restartMusic, skipSong, progr
         onClick={togglePlayPause} 
         style={{ 
           padding: '10px 20px',
-          backgroundColor: isPaused ? '#28a745' : '#dc3545', 
-          color: 'white', 
+          backgroundColor: isPaused ? '#B5EAD7' : '#FF9AA2', 
+          color: '#555555', 
           border: 'none', 
           borderRadius: 25,
           cursor: 'pointer',
           transition: 'all 0.3s ease',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.05)'
         }}
         onMouseOver={(e) => {
-          e.target.style.transform = 'translateY(-1px)';
+          e.target.style.transform = 'translateY(-2px)';
+          e.target.style.boxShadow = '0 6px 12px rgba(0,0,0,0.1)';
         }}
         onMouseOut={(e) => {
           e.target.style.transform = 'translateY(0)';
+          e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.05)';
         }}
       >
         {progress >= gameModeDuration && gameMode !== 'endless' ? '▶️ Play' : (isPaused ? '▶️ Play' : '⏸️ Pause')}
@@ -34,19 +37,22 @@ const GameControls = ({ isPaused, togglePlayPause, restartMusic, skipSong, progr
         onClick={restartMusic} 
         style={{ 
           padding: '10px 20px',
-          backgroundColor: '#007bff', 
-          color: 'white', 
+          backgroundColor: '#C7CEEA', 
+          color: '#555555', 
           border: 'none', 
           borderRadius: 25,
           cursor: 'pointer',
           transition: 'all 0.3s ease',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.05)'
         }}
         onMouseOver={(e) => {
-          e.target.style.transform = 'translateY(-1px)';
+          e.target.style.transform = 'translateY(-2px)';
+          e.target.style.boxShadow = '0 6px 12px rgba(0,0,0,0.1)';
         }}
         onMouseOut={(e) => {
           e.target.style.transform = 'translateY(0)';
+          e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.05)';
         }}
       >
         🔄 Replay
@@ -55,19 +61,22 @@ const GameControls = ({ isPaused, togglePlayPause, restartMusic, skipSong, progr
         onClick={skipSong} 
         style={{ 
           padding: '10px 20px',
-          backgroundColor: '#ffc107', 
-          color: 'black', 
+          backgroundColor: '#FFDAC1', 
+          color: '#555555', 
           border: 'none', 
           borderRadius: 25,
           cursor: 'pointer',
           transition: 'all 0.3s ease',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.05)'
         }}
         onMouseOver={(e) => {
-          e.target.style.transform = 'translateY(-1px)';
+          e.target.style.transform = 'translateY(-2px)';
+          e.target.style.boxShadow = '0 6px 12px rgba(0,0,0,0.1)';
         }}
         onMouseOut={(e) => {
           e.target.style.transform = 'translateY(0)';
+          e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.05)';
         }}
       >
         ⏭️ Skip

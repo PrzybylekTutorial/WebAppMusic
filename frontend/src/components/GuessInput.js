@@ -14,17 +14,19 @@ const GuessInput = ({ onGuess, userGuess, setUserGuess, suggestions, showSuggest
               padding: '12px 20px',
               width: '100%',
               boxSizing: 'border-box',
-              border: '2px solid #ddd',
+              border: '2px solid #E2F0CB',
               borderRadius: 25,
               fontSize: '1rem',
               outline: 'none',
-              transition: 'border-color 0.3s ease'
+              transition: 'border-color 0.3s ease',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              color: '#555555'
             }}
             onFocus={(e) => {
-              e.target.style.borderColor = '#1DB954';
+              e.target.style.borderColor = '#B5EAD7';
             }}
             onBlur={(e) => {
-              e.target.style.borderColor = '#ddd';
+              e.target.style.borderColor = '#E2F0CB';
               // Delay hiding suggestions to allow clicking
               setTimeout(() => setShowSuggestions(false), 200);
             }}
@@ -71,23 +73,24 @@ const GuessInput = ({ onGuess, userGuess, setUserGuess, suggestions, showSuggest
           style={{ 
             padding: '12px 25px',
             marginLeft: 10,
-            backgroundColor: '#1DB954',
-            color: 'white',
+            backgroundColor: '#B5EAD7',
+            color: '#555555',
             border: 'none',
             borderRadius: 25,
             cursor: 'pointer',
             fontSize: '1rem',
             fontWeight: 'bold',
             transition: 'all 0.3s ease',
-            whiteSpace: 'nowrap'
+            whiteSpace: 'nowrap',
+            boxShadow: '0 4px 8px rgba(181, 234, 215, 0.4)'
           }}
           onMouseOver={(e) => {
-            e.target.style.transform = 'translateY(-1px)';
-            e.target.style.boxShadow = '0 4px 8px rgba(29, 185, 84, 0.3)';
+            e.target.style.transform = 'translateY(-2px)';
+            e.target.style.boxShadow = '0 6px 12px rgba(181, 234, 215, 0.6)';
           }}
           onMouseOut={(e) => {
             e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = 'none';
+            e.target.style.boxShadow = '0 4px 8px rgba(181, 234, 215, 0.4)';
           }}
         >
           🎯 Submit Guess

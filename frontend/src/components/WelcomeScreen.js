@@ -14,20 +14,20 @@ const WelcomeScreen = ({ authLoading }) => {
             <button style={{
               padding: '15px 30px',
               fontSize: '1.2rem',
-              backgroundColor: '#1DB954',
-              color: 'white',
+              backgroundColor: '#B5EAD7',
+              color: '#555555',
               border: 'none',
               borderRadius: 50,
               cursor: 'pointer',
-              boxShadow: '0 8px 16px rgba(29, 185, 84, 0.3)',
+              boxShadow: '0 8px 16px rgba(181, 234, 215, 0.4)',
               transition: 'all 0.3s ease',
               fontWeight: 'bold'
             }} onMouseOver={(e) => {
               e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 12px 20px rgba(29, 185, 84, 0.4)';
+              e.target.style.boxShadow = '0 12px 20px rgba(181, 234, 215, 0.6)';
             }} onMouseOut={(e) => {
               e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 8px 16px rgba(29, 185, 84, 0.3)';
+              e.target.style.boxShadow = '0 8px 16px rgba(181, 234, 215, 0.4)';
             }}>
               🎧 Connect with Spotify
             </button>
@@ -43,9 +43,9 @@ const WelcomeScreen = ({ authLoading }) => {
           <div style={{ 
             marginTop: 20, 
             padding: 15, 
-            backgroundColor: 'rgba(29, 185, 84, 0.1)', 
+            backgroundColor: '#E2F0CB', 
             borderRadius: 10, 
-            border: '1px solid rgba(29, 185, 84, 0.3)',
+            border: '1px solid #B5EAD7',
             maxWidth: '500px',
             margin: '20px auto 0'
           }}>
