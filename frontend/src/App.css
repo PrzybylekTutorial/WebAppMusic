@@ -384,13 +384,20 @@
   }
   
   .guess-form {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .guess-input-wrapper {
+    max-width: 100%;
+    width: 100%;
   }
   
   .guess-submit-btn {
-    width: 100%;
-    padding: 15px;
-    margin-top: 10px;
+    width: auto;
+    padding: 0 20px;
+    margin-top: 0;
+    flex-shrink: 0;
   }
   
   .controls-row {
