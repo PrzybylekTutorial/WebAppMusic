@@ -437,15 +437,6 @@ function App() {
               </div>
             </div>
 
-            <ScoreBoard 
-              score={score} 
-              totalGuesses={totalGuesses} 
-              streak={streak} 
-              bestStreak={bestStreak} 
-              highScore={highScore} 
-              playedCount={playedSongs.size}
-              totalCount={trackUris.length}
-            />
 
             {accessToken && (
               <DynamicPlaylistManager 
@@ -616,6 +607,16 @@ function App() {
             <ResultDisplay 
               result={guessResult}
               onPlayAgain={playAgain}
+            />
+
+            <ScoreBoard 
+              score={score} 
+              totalGuesses={totalGuesses} 
+              streak={streak} 
+              bestStreak={bestStreak} 
+              highScore={highScore} 
+              playedCount={playedSongs.size}
+              totalCount={trackUris.length}
             />
           </>
         )}
