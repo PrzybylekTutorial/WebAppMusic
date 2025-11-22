@@ -1185,6 +1185,37 @@ app.delete('/api/delete-playlist/:playlistId', async (req, res) => {
 
     console.log(`Attempting to delete (unfollow) playlist: ${playlistId}`);
 
+    // Safety check: Verify playlist name before deleting
+    try {
+      const playlistResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?fields=name`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (playlistResponse.ok) {
+        const playlistData = await playlistResponse.json();
+        const expectedName = 'Dynamic Music Game Playlist';
+        
+        if (playlistData.name !== expectedName) {
+          console.warn(`Safety check failed: Playlist name "${playlistData.name}" does not match "${expectedName}"`);
+          return res.status(403).json({ 
+            error: 'Operation denied for safety', 
+            message: `Only playlists named "${expectedName}" can be deleted automatically.` 
+          });
+        }
+        console.log(`Safety check passed: Playlist name is "${playlistData.name}"`);
+      } else if (playlistResponse.status === 404) {
+        // If playlist doesn't exist, we can consider it "deleted"
+        console.log(`Playlist ${playlistId} not found during safety check (possibly already deleted)`);
+        return res.json({ success: true, message: 'Playlist already deleted or not found' });
+      } else {
+        console.warn(`Could not verify playlist name (Status: ${playlistResponse.status}). Proceeding with caution or aborting? Aborting.`);
+        return res.status(playlistResponse.status).json({ error: 'Failed to verify playlist details before deletion' });
+      }
+    } catch (checkError) {
+      console.error('Error during playlist safety check:', checkError);
+      return res.status(500).json({ error: 'Internal server error during safety check' });
+    }
+
     // To delete a playlist for the current user, we "unfollow" it
     const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/followers`, {
       method: 'DELETE',
