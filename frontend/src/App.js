@@ -209,15 +209,20 @@ function App() {
   const skipSong = async () => {
     if (!accessToken || !player.deviceId || trackUris.length === 0) return;
     try {
-      await player.handlePause();
+      // We don't need to explicitly pause, playRandomSong will handle the new track
+      // await player.handlePause(); 
+      
+      // Reset states but keep "isPlaying" logic ready for the next song
       setCurrentSong(null);
       setUserGuess('');
       setGuessResult(null);
-      player.setIsPlaying(false);
+      player.setIsPlaying(false); 
       player.setIsPaused(false);
       player.setProgress(0);
-      setStreak(0);
-      playRandomSong();
+      setStreak(0); // Penalty for skipping
+      
+      // Play the next random song
+      await playRandomSong();
     } catch (error) {
       console.error('Error skipping song:', error);
     }
