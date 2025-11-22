@@ -90,10 +90,22 @@ export const useSpotifyPlayer = (accessToken) => {
 
   useEffect(() => {
     let interval = null;
+    let localUpdateInterval = null;
+
     if (currentTrackId && isPlaying && !isPaused) {
-      interval = setInterval(updateProgress, 1000);
+      // Sync with Spotify API every 3 seconds to correct drift
+      interval = setInterval(updateProgress, 3000);
+
+      // Locally update progress every 100ms for smooth UI
+      localUpdateInterval = setInterval(() => {
+        setProgress(prev => prev + 100);
+      }, 100);
     }
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(localUpdateInterval);
+    };
   }, [currentTrackId, isPlaying, isPaused, updateProgress]);
 
   const handlePlay = async (uri, trackId) => {
