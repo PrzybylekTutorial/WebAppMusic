@@ -55,9 +55,24 @@ export const useSpotifyPlayer = (accessToken) => {
       player.addListener('player_state_changed', state => {
         if (!state) return;
         
-        const isNowPlaying = !state.paused;
-        setIsPlaying(isNowPlaying);
-        setIsPaused(state.paused);
+        // If we have a pending action or expected state, rely on that primarily
+        // to prevent jitter from old/delayed SDK events
+        if (expectedStateRef.current) {
+            const isSDKPaused = state.paused;
+            const expectedPaused = expectedStateRef.current === 'paused';
+            
+            // Only sync if SDK matches expectation or if enough time has passed
+            if (isSDKPaused === expectedPaused) {
+                const isNowPlaying = !state.paused;
+                setIsPlaying(isNowPlaying);
+                setIsPaused(state.paused);
+            }
+        } else {
+            // No pending expectation, sync freely
+            const isNowPlaying = !state.paused;
+            setIsPlaying(isNowPlaying);
+            setIsPaused(state.paused);
+        }
         
         // Update track info if changed
         if (state.track_window?.current_track) {
@@ -126,28 +141,34 @@ export const useSpotifyPlayer = (accessToken) => {
 
   const [isActionPending, setIsActionPending] = useState(false);
 
+  // Ref to track if we should be playing according to our local logic
+  // This helps override SDK events that might come in out of order or delayed
+  const expectedStateRef = useRef(null); // 'playing' | 'paused' | null
+
   const handlePlay = async (uri, trackId) => {
     if (!accessToken || !deviceId || isActionPending) return;
     try {
       setIsActionPending(true);
-      // Optimistic update
+      expectedStateRef.current = 'playing';
+      
+      // Update local state immediately
       setIsPlaying(true);
       setIsPaused(false);
       
       await playTrack(accessToken, deviceId, uri);
       
       setCurrentTrackId(trackId);
-      // Reset interpolation state
       lastStateRef.current = { position: 0, time: Date.now() };
       setProgress(0);
     } catch (error) {
       console.error('Error playing track:', error);
-      // Revert optimistic update on error
+      expectedStateRef.current = null;
+      // Revert on error
       setIsPlaying(false);
       setIsPaused(true);
       throw error;
     } finally {
-      setTimeout(() => setIsActionPending(false), 250); // Small debounce
+      setTimeout(() => setIsActionPending(false), 500);
     }
   };
 
@@ -155,18 +176,20 @@ export const useSpotifyPlayer = (accessToken) => {
     if (!accessToken || !deviceId || isActionPending) return;
     try {
       setIsActionPending(true);
-      // Optimistic update
+      expectedStateRef.current = 'paused';
+      
       setIsPaused(true);
       setIsPlaying(false);
       
       await pausePlayback(accessToken, deviceId);
     } catch (error) {
       console.error('Error pausing:', error);
+      expectedStateRef.current = null;
       // Revert
       setIsPaused(false);
       setIsPlaying(true);
     } finally {
-      setTimeout(() => setIsActionPending(false), 250);
+      setTimeout(() => setIsActionPending(false), 500);
     }
   };
 
@@ -174,21 +197,22 @@ export const useSpotifyPlayer = (accessToken) => {
     if (!accessToken || !deviceId || isActionPending) return;
     try {
       setIsActionPending(true);
-      // Optimistic update
+      expectedStateRef.current = 'playing';
+      
       setIsPaused(false);
       setIsPlaying(true);
       
       await resumePlayback(accessToken, deviceId);
       
-      // Update reference time to avoid jumps on resume
       lastStateRef.current = { position: progress, time: Date.now() };
     } catch (error) {
       console.error('Error resuming:', error);
+      expectedStateRef.current = null;
       // Revert
       setIsPaused(true);
       setIsPlaying(false);
     } finally {
-      setTimeout(() => setIsActionPending(false), 250);
+      setTimeout(() => setIsActionPending(false), 500);
     }
   };
 
