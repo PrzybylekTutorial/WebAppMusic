@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { useSpotifyPlayer } from './hooks/useSpotifyPlayer';
 import { 
@@ -53,6 +53,21 @@ function App() {
   // New state for hidden info
   const [revealArtist, setRevealArtist] = useState(false);
   const [revealAlbum, setRevealAlbum] = useState(false);
+
+  // ===== TIMEOUT MANAGEMENT FOR PROGRESSIVE MODE =====
+  const progressiveTimeoutRef = useRef(null);
+
+  const clearProgressiveTimeout = useCallback(() => {
+    if (progressiveTimeoutRef.current) {
+      clearTimeout(progressiveTimeoutRef.current);
+      progressiveTimeoutRef.current = null;
+    }
+  }, []);
+
+  const setProgressiveTimeout = useCallback((callback, delay) => {
+    clearProgressiveTimeout();
+    progressiveTimeoutRef.current = setTimeout(callback, delay);
+  }, [clearProgressiveTimeout]);
 
   // ===== HELPER FUNCTIONS =====
   const cleanupDynamicPlaylist = useCallback(async (playlistId, token) => {
@@ -162,6 +177,20 @@ function App() {
     if (accessToken) fetchTrackUris();
   }, [accessToken, fetchTrackUris]);
 
+  // Cleanup timeout on unmount or game mode change
+  useEffect(() => {
+    return () => {
+      clearProgressiveTimeout();
+    };
+  }, [clearProgressiveTimeout]);
+
+  // Clear timeout when switching away from progressive mode
+  useEffect(() => {
+    if (gameMode !== 'progressive') {
+      clearProgressiveTimeout();
+    }
+  }, [gameMode, clearProgressiveTimeout]);
+
   // Auto-stop logic
   useEffect(() => {
     if (player.progress >= gameModeDuration && player.isPlaying && gameMode === 'progressive') {
@@ -224,6 +253,12 @@ function App() {
         const initialStep = PROGRESSIVE_STEPS[0];
         setGameModeDuration(initialStep);
         setCurrentStepIndex(0);
+        
+        // Set timeout to stop at the initial duration
+        setProgressiveTimeout(() => {
+          if (player.localPause) player.localPause();
+          else player.handlePause();
+        }, initialStep);
       }
       
     } catch (error) {
@@ -268,6 +303,13 @@ function App() {
           setGameModeDuration(newDuration);
           
           player.handlePlay(currentSong.uri, currentSong.id);
+          
+          // Set timeout to stop at the new duration
+          setProgressiveTimeout(() => {
+            if (player.localPause) player.localPause();
+            else player.handlePause();
+          }, newDuration);
+          
           return;
         }
       }
@@ -290,11 +332,19 @@ function App() {
         setGameModeDuration(newDuration);
         
         await player.handlePlay(currentSong.uri, currentSong.id);
+        
+        // Set timeout to stop at the new duration
+        setProgressiveTimeout(() => {
+          if (player.localPause) player.localPause();
+          else player.handlePause();
+        }, newDuration);
+        
         return;
       }
     }
 
     try {
+      clearProgressiveTimeout();
       setCurrentSong(null);
       setUserGuess('');
       setGuessResult(null);
@@ -310,6 +360,7 @@ function App() {
   };
 
   const playAgain = () => {
+    clearProgressiveTimeout();
     setCurrentSong(null);
     player.setIsPlaying(false);
     setUserGuess('');
@@ -318,6 +369,9 @@ function App() {
   };
 
   const resetGame = async () => {
+    // Clear progressive timeout
+    clearProgressiveTimeout();
+    
     if (dynamicPlaylistId && accessToken) {
        await cleanupDynamicPlaylist(dynamicPlaylistId, accessToken);
        setDynamicPlaylistId(null);
@@ -545,7 +599,7 @@ function App() {
                          await player.handlePlay(currentSong.uri, currentSong.id);
                          
                          // Set precise timeout to stop exactly at duration
-                         setTimeout(() => {
+                         setProgressiveTimeout(() => {
                             if (player.localPause) player.localPause();
                             else player.handlePause();
                          }, gameModeDuration);
@@ -557,7 +611,7 @@ function App() {
                         if (gameMode === 'progressive') {
                             const remainingTime = gameModeDuration - player.progress;
                             if (remainingTime > 0) {
-                                setTimeout(() => {
+                                setProgressiveTimeout(() => {
                                     if (player.localPause) player.localPause();
                                     else player.handlePause();
                                 }, remainingTime);
@@ -566,13 +620,17 @@ function App() {
                       }
                     } else {
                       player.handlePause();
+                      // Clear timeout when manually pausing
+                      if (gameMode === 'progressive') {
+                        clearProgressiveTimeout();
+                      }
                     }
                   }}
                   restartMusic={() => {
                     player.handlePlay(currentSong.uri, currentSong.id);
                     // Also schedule stop for progressive mode on manual restart
                     if (gameMode === 'progressive') {
-                        setTimeout(() => {
+                        setProgressiveTimeout(() => {
                             if (player.localPause) player.localPause();
                             else player.handlePause();
                         }, gameModeDuration);

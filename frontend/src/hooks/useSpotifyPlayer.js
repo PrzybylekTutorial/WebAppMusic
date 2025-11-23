@@ -145,7 +145,7 @@ export const useSpotifyPlayer = (accessToken) => {
   // This helps override SDK events that might come in out of order or delayed
   const expectedStateRef = useRef(null); // 'playing' | 'paused' | null
 
-  const handlePlay = async (uri, trackId) => {
+  const handlePlay = async (uri, trackId, seekPosition = 0) => {
     if (!accessToken || !deviceId || isActionPending) return;
     try {
       setIsActionPending(true);
@@ -156,6 +156,11 @@ export const useSpotifyPlayer = (accessToken) => {
       setIsPaused(false);
       
       await playTrack(accessToken, deviceId, uri);
+      
+      // Explicitly seek to the start position for accurate timing
+      if (seekPosition === 0) {
+        await seekToPosition(accessToken, deviceId, 0);
+      }
       
       setCurrentTrackId(trackId);
       lastStateRef.current = { position: 0, time: Date.now() };
