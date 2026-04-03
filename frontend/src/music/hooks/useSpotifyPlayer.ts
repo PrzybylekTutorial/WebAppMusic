@@ -362,9 +362,6 @@ export const useSpotifyPlayer = (accessToken: string | null) => {
   };
 
   const handlePause = async () => {
-    // #region agent log
-    console.log('[DBG-2b6f2d] handlePause called:', JSON.stringify({hasToken:!!accessToken,hasDevice:!!deviceId,isActionPending}));
-    // #endregion
     if (!accessToken || !deviceId || isActionPending) return;
     try {
       setIsActionPending(true);

@@ -57,9 +57,6 @@ export const useHeardleGame = (
   // Clear timeout helper
   const clearPlaybackTimeout = useCallback(() => {
     if (playbackTimeoutRef.current) {
-      // #region agent log
-      console.log('[DBG-2b6f2d] clearPlaybackTimeout: clearing existing timeout');
-      // #endregion
       clearTimeout(playbackTimeoutRef.current);
       playbackTimeoutRef.current = null;
     }
@@ -98,22 +95,13 @@ export const useHeardleGame = (
   // Aggressively pause using both SDK and Web API — the SDK's local
   // pause() alone is unreliable for newly-loaded tracks.
   const forceStopPlayback = useCallback(async () => {
-    let localOk = false, apiOk = false, localErr: any = null, apiErr: any = null;
-    try { await player.localPause(); localOk = true; } catch (e) { localErr = String(e); }
-    try { await player.handlePause(); apiOk = true; } catch (e) { apiErr = String(e); }
-    // #region agent log
-    console.log('[DBG-2b6f2d] forceStopPlayback:', JSON.stringify({localOk, apiOk, localErr, apiErr}));
-    // #endregion
+    try { await player.localPause(); } catch {}
+    try { await player.handlePause(); } catch {}
   }, [player]);
 
   // Play snippet from beginning or resume from paused position
   const playSnippet = useCallback(async () => {
     if (!currentSong || !player.isDeviceReady) return;
-
-    // #region agent log
-    const snippetT0 = Date.now();
-    console.log('[DBG-2b6f2d] playSnippet:entry', JSON.stringify({segIdx:roundState.currentSegmentIndex,endTime:roundState.segments[roundState.currentSegmentIndex]?.endTime,pausedAt:roundState.pausedAt}));
-    // #endregion
 
     try {
       clearPlaybackTimeout();
@@ -123,10 +111,6 @@ export const useHeardleGame = (
       
       const startPosition = roundState.pausedAt || 0;
       const remainingTime = maxPlayTime - startPosition;
-
-      // #region agent log
-      console.log('[DBG-2b6f2d] playSnippet:timing', JSON.stringify({maxPlayTime,startPosition,remainingTime,isNaN:Number.isNaN(remainingTime)}));
-      // #endregion
       
       // Update state immediately (optimistic)
       setRoundState(prev => ({
@@ -139,26 +123,16 @@ export const useHeardleGame = (
       pausedPositionRef.current = startPosition;
 
       if (startPosition === 0) {
-        // #region agent log
-        console.log('[DBG-2b6f2d] playSnippet: calling playLocalSnippet...');
-        // #endregion
         await player.playLocalSnippet(currentSong.uri, currentSong.id);
       } else {
         await player.localSeek(startPosition);
         await player.handleResume();
       }
 
-      // #region agent log
-      console.log('[DBG-2b6f2d] playSnippet:afterPlay resolved in', Date.now()-snippetT0, 'ms, setting timeout for', remainingTime, 'ms');
-      // #endregion
-
       playbackStartTimeRef.current = Date.now();
 
       // Schedule stop at segment end
       playbackTimeoutRef.current = setTimeout(async () => {
-        // #region agent log
-        console.log('[DBG-2b6f2d] playSnippet:timeoutFired scheduledDelay=', remainingTime, 'actualDelay=', Date.now()-playbackStartTimeRef.current);
-        // #endregion
         await forceStopPlayback();
         setRoundState(prev => ({
           ...prev,
@@ -169,11 +143,7 @@ export const useHeardleGame = (
       }, remainingTime);
 
     } catch (error) {
-      // #region agent log
-      console.log('[DBG-2b6f2d] playSnippet:CATCH error=', String(error), 'elapsed=', Date.now()-snippetT0);
-      // #endregion
       console.error("Error playing snippet:", error);
-      // Audio may already be playing — make sure to stop it
       await forceStopPlayback();
       setRoundState(prev => ({
         ...prev,
