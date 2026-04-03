@@ -58,7 +58,7 @@ export const useHeardleGame = (
   const clearPlaybackTimeout = useCallback(() => {
     if (playbackTimeoutRef.current) {
       // #region agent log
-      fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useHeardleGame.ts:clearPlaybackTimeout',message:'clearing existing timeout',data:{stack:new Error().stack?.split('\n').slice(1,4).join(' | ')},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
+      console.log('[DBG-2b6f2d] clearPlaybackTimeout: clearing existing timeout');
       // #endregion
       clearTimeout(playbackTimeoutRef.current);
       playbackTimeoutRef.current = null;
@@ -98,14 +98,11 @@ export const useHeardleGame = (
   // Aggressively pause using both SDK and Web API — the SDK's local
   // pause() alone is unreliable for newly-loaded tracks.
   const forceStopPlayback = useCallback(async () => {
-    // #region agent log
-    const fsT0 = Date.now();
-    // #endregion
     let localOk = false, apiOk = false, localErr: any = null, apiErr: any = null;
     try { await player.localPause(); localOk = true; } catch (e) { localErr = String(e); }
     try { await player.handlePause(); apiOk = true; } catch (e) { apiErr = String(e); }
     // #region agent log
-    fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useHeardleGame.ts:forceStopPlayback',message:'forceStopPlayback result',data:{localOk,apiOk,localErr,apiErr,elapsed:Date.now()-fsT0},timestamp:Date.now(),hypothesisId:'B,C'})}).catch(()=>{});
+    console.log('[DBG-2b6f2d] forceStopPlayback:', JSON.stringify({localOk, apiOk, localErr, apiErr}));
     // #endregion
   }, [player]);
 
@@ -115,7 +112,7 @@ export const useHeardleGame = (
 
     // #region agent log
     const snippetT0 = Date.now();
-    fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useHeardleGame.ts:playSnippet:entry',message:'playSnippet called',data:{segIdx:roundState.currentSegmentIndex,endTime:roundState.segments[roundState.currentSegmentIndex]?.endTime,pausedAt:roundState.pausedAt},timestamp:Date.now(),hypothesisId:'A,D'})}).catch(()=>{});
+    console.log('[DBG-2b6f2d] playSnippet:entry', JSON.stringify({segIdx:roundState.currentSegmentIndex,endTime:roundState.segments[roundState.currentSegmentIndex]?.endTime,pausedAt:roundState.pausedAt}));
     // #endregion
 
     try {
@@ -128,7 +125,7 @@ export const useHeardleGame = (
       const remainingTime = maxPlayTime - startPosition;
 
       // #region agent log
-      fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useHeardleGame.ts:playSnippet:timing',message:'timing values',data:{maxPlayTime,startPosition,remainingTime,isNaN:Number.isNaN(remainingTime)},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
+      console.log('[DBG-2b6f2d] playSnippet:timing', JSON.stringify({maxPlayTime,startPosition,remainingTime,isNaN:Number.isNaN(remainingTime)}));
       // #endregion
       
       // Update state immediately (optimistic)
@@ -142,6 +139,9 @@ export const useHeardleGame = (
       pausedPositionRef.current = startPosition;
 
       if (startPosition === 0) {
+        // #region agent log
+        console.log('[DBG-2b6f2d] playSnippet: calling playLocalSnippet...');
+        // #endregion
         await player.playLocalSnippet(currentSong.uri, currentSong.id);
       } else {
         await player.localSeek(startPosition);
@@ -149,7 +149,7 @@ export const useHeardleGame = (
       }
 
       // #region agent log
-      fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useHeardleGame.ts:playSnippet:afterPlay',message:'playLocalSnippet resolved',data:{elapsed:Date.now()-snippetT0,remainingTime},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+      console.log('[DBG-2b6f2d] playSnippet:afterPlay resolved in', Date.now()-snippetT0, 'ms, setting timeout for', remainingTime, 'ms');
       // #endregion
 
       playbackStartTimeRef.current = Date.now();
@@ -157,7 +157,7 @@ export const useHeardleGame = (
       // Schedule stop at segment end
       playbackTimeoutRef.current = setTimeout(async () => {
         // #region agent log
-        fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useHeardleGame.ts:playSnippet:timeoutFired',message:'timeout fired — about to forceStop',data:{scheduledDelay:remainingTime,actualDelay:Date.now()-playbackStartTimeRef.current},timestamp:Date.now(),hypothesisId:'C,E'})}).catch(()=>{});
+        console.log('[DBG-2b6f2d] playSnippet:timeoutFired scheduledDelay=', remainingTime, 'actualDelay=', Date.now()-playbackStartTimeRef.current);
         // #endregion
         await forceStopPlayback();
         setRoundState(prev => ({
@@ -170,7 +170,7 @@ export const useHeardleGame = (
 
     } catch (error) {
       // #region agent log
-      fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useHeardleGame.ts:playSnippet:catch',message:'playSnippet caught error',data:{error:String(error),elapsed:Date.now()-snippetT0},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+      console.log('[DBG-2b6f2d] playSnippet:CATCH error=', String(error), 'elapsed=', Date.now()-snippetT0);
       // #endregion
       console.error("Error playing snippet:", error);
       // Audio may already be playing — make sure to stop it
