@@ -495,10 +495,10 @@ app.get('/api/music/search', async (req, res) => {
         if (genre) filters.genre = genre;
         if (artist) filters.artist = artist;
         
-        // Search for songs in MongoDB with filters
+        // Search for songs in MongoDB with filters (q searches both title and artist)
         const songs = await mongoService.advancedSearch({
             ...filters,
-            title: q // Use the search query as title filter
+            q
         }, parseInt(limit));
         
         console.log(`Found ${songs.length} songs matching "${q}" with applied filters`);
@@ -548,10 +548,10 @@ app.get('/api/search', async (req, res) => {
         if (genre) filters.genre = genre;
         if (artist) filters.artist = artist;
         
-        // Search for songs in MongoDB with filters
+        // Search for songs in MongoDB with filters (q searches both title and artist)
         const songs = await mongoService.advancedSearch({
             ...filters,
-            title: q // Use the search query as title filter
+            q
         }, parseInt(limit));
         
         console.log(`Found ${songs.length} songs matching "${q}" with applied filters`);

@@ -329,7 +329,7 @@ const DynamicPlaylistManager: React.FC<DynamicPlaylistManagerProps> = ({ accessT
       const response = await fetch(getApiUrl('/api/music/genres'));
       
       if (!response.ok) {
-        throw new Error('Failed to load genres');
+        await handleApiError(response);
       }
 
       const data = await response.json();
@@ -345,7 +345,10 @@ const DynamicPlaylistManager: React.FC<DynamicPlaylistManagerProps> = ({ accessT
     } catch (error) {
       console.error('Error loading genres:', error);
       setAvailableGenres([]);
-      setMessage('Error loading genres from database');
+      const detail = error instanceof Error ? error.message : '';
+      setMessage(
+        detail ? `Error loading genres from database: ${detail}` : 'Error loading genres from database'
+      );
     } finally {
       setIsLoadingGenres(false);
     }
@@ -357,7 +360,7 @@ const DynamicPlaylistManager: React.FC<DynamicPlaylistManagerProps> = ({ accessT
       const response = await fetch(getApiUrl('/api/music/artists'));
       
       if (!response.ok) {
-        throw new Error('Failed to load artists');
+        await handleApiError(response);
       }
 
       const data = await response.json();
@@ -373,7 +376,10 @@ const DynamicPlaylistManager: React.FC<DynamicPlaylistManagerProps> = ({ accessT
     } catch (error) {
       console.error('Error loading artists:', error);
       setAvailableArtists([]);
-      setMessage('Error loading artists from database');
+      const detail = error instanceof Error ? error.message : '';
+      setMessage(
+        detail ? `Error loading artists from database: ${detail}` : 'Error loading artists from database'
+      );
     } finally {
       setIsLoadingArtists(false);
     }

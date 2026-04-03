@@ -110,16 +110,27 @@ class MongoService {
         
         try {
             const query = {};
+            const conditions = [];
 
-            // Add filters to query
+            // General text query searches across title and artist
+            if (filters.q) {
+                conditions.push({
+                    $or: [
+                        { title: { $regex: filters.q, $options: 'i' } },
+                        { artist: { $regex: filters.q, $options: 'i' } }
+                    ]
+                });
+            }
+
+            // Specific field filters (from dropdowns)
             if (filters.title) {
-                query.title = { $regex: filters.title, $options: 'i' };
+                conditions.push({ title: { $regex: filters.title, $options: 'i' } });
             }
             if (filters.artist) {
-                query.artist = { $regex: filters.artist, $options: 'i' };
+                conditions.push({ artist: { $regex: filters.artist, $options: 'i' } });
             }
             if (filters.genre) {
-                query.genre = { $regex: filters.genre, $options: 'i' };
+                conditions.push({ genre: { $regex: filters.genre, $options: 'i' } });
             }
             if (filters.year) {
                 query.year = parseInt(filters.year);
@@ -132,6 +143,10 @@ class MongoService {
             }
             if (filters.minPopularity) {
                 query.popularity = { $gte: parseInt(filters.minPopularity) };
+            }
+
+            if (conditions.length > 0) {
+                query.$and = conditions;
             }
 
             const songs = await this.collection
