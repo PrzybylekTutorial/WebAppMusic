@@ -1,2 +1,4 @@
 .env
 realRockMetalDatabase.json
+node_modules/
+.cursor/
