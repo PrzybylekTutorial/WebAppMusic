@@ -362,6 +362,9 @@ export const useSpotifyPlayer = (accessToken: string | null) => {
   };
 
   const handlePause = async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useSpotifyPlayer.ts:handlePause',message:'handlePause called',data:{hasToken:!!accessToken,hasDevice:!!deviceId,isActionPending},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     if (!accessToken || !deviceId || isActionPending) return;
     try {
       setIsActionPending(true);

@@ -57,6 +57,9 @@ export const useHeardleGame = (
   // Clear timeout helper
   const clearPlaybackTimeout = useCallback(() => {
     if (playbackTimeoutRef.current) {
+      // #region agent log
+      fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useHeardleGame.ts:clearPlaybackTimeout',message:'clearing existing timeout',data:{stack:new Error().stack?.split('\n').slice(1,4).join(' | ')},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
       clearTimeout(playbackTimeoutRef.current);
       playbackTimeoutRef.current = null;
     }
@@ -95,13 +98,25 @@ export const useHeardleGame = (
   // Aggressively pause using both SDK and Web API — the SDK's local
   // pause() alone is unreliable for newly-loaded tracks.
   const forceStopPlayback = useCallback(async () => {
-    try { await player.localPause(); } catch {}
-    try { await player.handlePause(); } catch {}
+    // #region agent log
+    const fsT0 = Date.now();
+    // #endregion
+    let localOk = false, apiOk = false, localErr: any = null, apiErr: any = null;
+    try { await player.localPause(); localOk = true; } catch (e) { localErr = String(e); }
+    try { await player.handlePause(); apiOk = true; } catch (e) { apiErr = String(e); }
+    // #region agent log
+    fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useHeardleGame.ts:forceStopPlayback',message:'forceStopPlayback result',data:{localOk,apiOk,localErr,apiErr,elapsed:Date.now()-fsT0},timestamp:Date.now(),hypothesisId:'B,C'})}).catch(()=>{});
+    // #endregion
   }, [player]);
 
   // Play snippet from beginning or resume from paused position
   const playSnippet = useCallback(async () => {
     if (!currentSong || !player.isDeviceReady) return;
+
+    // #region agent log
+    const snippetT0 = Date.now();
+    fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useHeardleGame.ts:playSnippet:entry',message:'playSnippet called',data:{segIdx:roundState.currentSegmentIndex,endTime:roundState.segments[roundState.currentSegmentIndex]?.endTime,pausedAt:roundState.pausedAt},timestamp:Date.now(),hypothesisId:'A,D'})}).catch(()=>{});
+    // #endregion
 
     try {
       clearPlaybackTimeout();
@@ -111,6 +126,10 @@ export const useHeardleGame = (
       
       const startPosition = roundState.pausedAt || 0;
       const remainingTime = maxPlayTime - startPosition;
+
+      // #region agent log
+      fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useHeardleGame.ts:playSnippet:timing',message:'timing values',data:{maxPlayTime,startPosition,remainingTime,isNaN:Number.isNaN(remainingTime)},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
       
       // Update state immediately (optimistic)
       setRoundState(prev => ({
@@ -129,10 +148,17 @@ export const useHeardleGame = (
         await player.handleResume();
       }
 
+      // #region agent log
+      fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useHeardleGame.ts:playSnippet:afterPlay',message:'playLocalSnippet resolved',data:{elapsed:Date.now()-snippetT0,remainingTime},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+
       playbackStartTimeRef.current = Date.now();
 
       // Schedule stop at segment end
       playbackTimeoutRef.current = setTimeout(async () => {
+        // #region agent log
+        fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useHeardleGame.ts:playSnippet:timeoutFired',message:'timeout fired — about to forceStop',data:{scheduledDelay:remainingTime,actualDelay:Date.now()-playbackStartTimeRef.current},timestamp:Date.now(),hypothesisId:'C,E'})}).catch(()=>{});
+        // #endregion
         await forceStopPlayback();
         setRoundState(prev => ({
           ...prev,
@@ -143,6 +169,9 @@ export const useHeardleGame = (
       }, remainingTime);
 
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7660/ingest/cdea04f8-82f9-4e13-8960-842a43783c3e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2b6f2d'},body:JSON.stringify({sessionId:'2b6f2d',location:'useHeardleGame.ts:playSnippet:catch',message:'playSnippet caught error',data:{error:String(error),elapsed:Date.now()-snippetT0},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       console.error("Error playing snippet:", error);
       // Audio may already be playing — make sure to stop it
       await forceStopPlayback();
