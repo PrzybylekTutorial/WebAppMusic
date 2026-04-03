@@ -57,9 +57,6 @@ export const useHeardleGame = (
   // Clear timeout helper
   const clearPlaybackTimeout = useCallback(() => {
     if (playbackTimeoutRef.current) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/c9158dbd-f640-43e8-bfa2-60719e3baca4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useHeardleGame.ts:clearPlaybackTimeout',message:'Clearing timeout',data:{hadTimeout:true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
       clearTimeout(playbackTimeoutRef.current);
       playbackTimeoutRef.current = null;
     }
@@ -97,9 +94,6 @@ export const useHeardleGame = (
 
   // Play snippet from beginning or resume from paused position
   const playSnippet = useCallback(async () => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/c9158dbd-f640-43e8-bfa2-60719e3baca4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useHeardleGame.ts:playSnippet:entry',message:'playSnippet called',data:{hasCurrentSong:!!currentSong,isDeviceReady:player.isDeviceReady},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     if (!currentSong || !player.isDeviceReady) return;
 
     try {
@@ -108,13 +102,7 @@ export const useHeardleGame = (
       const currentSegment = roundState.segments[roundState.currentSegmentIndex];
       const maxPlayTime = currentSegment.endTime;
       
-      // Determine start position
       const startPosition = roundState.pausedAt || 0;
-      const remainingTime = maxPlayTime - startPosition;
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/c9158dbd-f640-43e8-bfa2-60719e3baca4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useHeardleGame.ts:playSnippet:timing',message:'Timing values calculated',data:{segmentIndex:roundState.currentSegmentIndex,maxPlayTime,startPosition,remainingTime,pausedAt:roundState.pausedAt,segmentEndTime:currentSegment.endTime},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B'})}).catch(()=>{});
-      // #endregion
       
       // Update state immediately (optimistic)
       setRoundState(prev => ({
@@ -126,46 +114,33 @@ export const useHeardleGame = (
       
       pausedPositionRef.current = startPosition;
 
-      // Use local snippet play for cached instant playback
       if (startPosition === 0) {
-        // Fresh start - play from beginning
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/c9158dbd-f640-43e8-bfa2-60719e3baca4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useHeardleGame.ts:playSnippet:beforePlay',message:'About to call playLocalSnippet',data:{uri:currentSong.uri,id:currentSong.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
         await player.playLocalSnippet(currentSong.uri, currentSong.id);
-        // playLocalSnippet confirms playback is at position ~0 when it returns
-        // So we set playbackStartTimeRef AFTER it completes
-        playbackStartTimeRef.current = Date.now();
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/c9158dbd-f640-43e8-bfa2-60719e3baca4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useHeardleGame.ts:playSnippet:afterPlay',message:'playLocalSnippet completed - position confirmed at 0',data:{playbackStartTime:playbackStartTimeRef.current},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
       } else {
-        // Resume from paused position
         await player.localSeek(startPosition);
         await player.handleResume();
-        playbackStartTimeRef.current = Date.now();
       }
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/c9158dbd-f640-43e8-bfa2-60719e3baca4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useHeardleGame.ts:playSnippet:settingTimeout',message:'Setting timeout to stop playback',data:{remainingTime,maxPlayTime},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
-      
-      // Schedule stop at segment end - playLocalSnippet confirmed we're at position 0
+      // Read actual SDK position to compensate for time elapsed during
+      // playLocalSnippet (especially on first play when a new track is
+      // loaded via the Web API — can drift 50-200ms before returning).
+      const state = await player.getCurrentState();
+      const actualPosition = state?.position ?? startPosition;
+      const adjustedRemaining = Math.max(0, maxPlayTime - actualPosition);
+
+      playbackStartTimeRef.current = Date.now();
+      pausedPositionRef.current = actualPosition;
+
+      // Schedule stop at segment end using the adjusted remaining time
       playbackTimeoutRef.current = setTimeout(async () => {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/c9158dbd-f640-43e8-bfa2-60719e3baca4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useHeardleGame.ts:playSnippet:timeoutFired',message:'Timeout fired - stopping playback',data:{actualDelay:Date.now()-playbackStartTimeRef.current,expectedDelay:remainingTime},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D,E'})}).catch(()=>{});
-        // #endregion
         await player.localPause();
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/c9158dbd-f640-43e8-bfa2-60719e3baca4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useHeardleGame.ts:playSnippet:pauseComplete',message:'localPause completed',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
         setRoundState(prev => ({
           ...prev,
           isPlaying: false,
           isPaused: false,
           playbackPosition: maxPlayTime,
         }));
-      }, remainingTime);
+      }, adjustedRemaining);
 
     } catch (error) {
       console.error("Error playing snippet:", error);

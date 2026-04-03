@@ -474,8 +474,7 @@ export const useSpotifyPlayer = (accessToken: string | null) => {
       const start = Date.now();
       while (Date.now() - start < maxWait) {
         const currentState = await player.getCurrentState();
-        // Position should be very close to 0 after seek, and still playing
-        if (currentState && currentState.position < 100 && !currentState.paused) {
+        if (currentState && currentState.position < 50 && !currentState.paused) {
           return true;
         }
         await new Promise(r => setTimeout(r, 20));
