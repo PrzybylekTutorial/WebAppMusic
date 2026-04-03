@@ -92,6 +92,13 @@ export const useHeardleGame = (
     await onLoadNewSong();
   }, [onLoadNewSong]);
 
+  // Aggressively pause using both SDK and Web API — the SDK's local
+  // pause() alone is unreliable for newly-loaded tracks.
+  const forceStopPlayback = useCallback(async () => {
+    try { await player.localPause(); } catch {}
+    try { await player.handlePause(); } catch {}
+  }, [player]);
+
   // Play snippet from beginning or resume from paused position
   const playSnippet = useCallback(async () => {
     if (!currentSong || !player.isDeviceReady) return;
@@ -103,6 +110,7 @@ export const useHeardleGame = (
       const maxPlayTime = currentSegment.endTime;
       
       const startPosition = roundState.pausedAt || 0;
+      const remainingTime = maxPlayTime - startPosition;
       
       // Update state immediately (optimistic)
       setRoundState(prev => ({
@@ -121,36 +129,30 @@ export const useHeardleGame = (
         await player.handleResume();
       }
 
-      // Read actual SDK position to compensate for time elapsed during
-      // playLocalSnippet (especially on first play when a new track is
-      // loaded via the Web API — can drift 50-200ms before returning).
-      const state = await player.getCurrentState();
-      const actualPosition = state?.position ?? startPosition;
-      const adjustedRemaining = Math.max(0, maxPlayTime - actualPosition);
-
       playbackStartTimeRef.current = Date.now();
-      pausedPositionRef.current = actualPosition;
 
-      // Schedule stop at segment end using the adjusted remaining time
+      // Schedule stop at segment end
       playbackTimeoutRef.current = setTimeout(async () => {
-        await player.localPause();
+        await forceStopPlayback();
         setRoundState(prev => ({
           ...prev,
           isPlaying: false,
           isPaused: false,
           playbackPosition: maxPlayTime,
         }));
-      }, adjustedRemaining);
+      }, remainingTime);
 
     } catch (error) {
       console.error("Error playing snippet:", error);
+      // Audio may already be playing — make sure to stop it
+      await forceStopPlayback();
       setRoundState(prev => ({
         ...prev,
         isPlaying: false,
         isPaused: false,
       }));
     }
-  }, [currentSong, player, roundState.segments, roundState.currentSegmentIndex, roundState.pausedAt, clearPlaybackTimeout]);
+  }, [currentSong, player, roundState.segments, roundState.currentSegmentIndex, roundState.pausedAt, clearPlaybackTimeout, forceStopPlayback]);
 
   // Pause snippet - remembers position for resume
   const pauseSnippet = useCallback(async () => {
@@ -168,12 +170,8 @@ export const useHeardleGame = (
       playbackPosition: currentPosition,
     }));
 
-    try {
-      await player.localPause();
-    } catch (error) {
-      console.error("Error pausing snippet:", error);
-    }
-  }, [player, clearPlaybackTimeout]);
+    await forceStopPlayback();
+  }, [player, clearPlaybackTimeout, forceStopPlayback]);
 
   // Resume from paused position
   const resumeSnippet = useCallback(async () => {
@@ -212,7 +210,7 @@ export const useHeardleGame = (
 
       // Schedule stop
       playbackTimeoutRef.current = setTimeout(async () => {
-        await player.localPause();
+        await forceStopPlayback();
         setRoundState(prev => ({
           ...prev,
           isPlaying: false,
@@ -224,13 +222,14 @@ export const useHeardleGame = (
 
     } catch (error) {
       console.error("Error resuming snippet:", error);
+      await forceStopPlayback();
       setRoundState(prev => ({
         ...prev,
         isPlaying: false,
         isPaused: false,
       }));
     }
-  }, [currentSong, player, roundState.pausedAt, roundState.segments, roundState.currentSegmentIndex, clearPlaybackTimeout]);
+  }, [currentSong, player, roundState.pausedAt, roundState.segments, roundState.currentSegmentIndex, clearPlaybackTimeout, forceStopPlayback]);
 
   // Replay from beginning of current segment
   const replaySnippet = useCallback(async () => {
