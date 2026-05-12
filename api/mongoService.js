@@ -5,6 +5,8 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const DATABASE_NAME = process.env.DATABASE_NAME || 'musicApp';
 const COLLECTION_NAME = process.env.COLLECTION_NAME || 'songs';
 
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 class MongoService {
     constructor() {
         this.client = null;
@@ -53,9 +55,9 @@ class MongoService {
         try {
             const searchQuery = {
                 $or: [
-                    { title: { $regex: query, $options: 'i' } },
-                    { artist: { $regex: query, $options: 'i' } },
-                    { genre: { $regex: query, $options: 'i' } }
+                    { title: { $regex: escapeRegex(query), $options: 'i' } },
+                    { artist: { $regex: escapeRegex(query), $options: 'i' } },
+                    { genre: { $regex: escapeRegex(query), $options: 'i' } }
                 ]
             };
 
@@ -114,23 +116,24 @@ class MongoService {
 
             // General text query searches across title and artist
             if (filters.q) {
+                const escapedQuery = escapeRegex(filters.q);
                 conditions.push({
                     $or: [
-                        { title: { $regex: filters.q, $options: 'i' } },
-                        { artist: { $regex: filters.q, $options: 'i' } }
+                        { title: { $regex: escapedQuery, $options: 'i' } },
+                        { artist: { $regex: escapedQuery, $options: 'i' } }
                     ]
                 });
             }
 
             // Specific field filters (from dropdowns)
             if (filters.title) {
-                conditions.push({ title: { $regex: filters.title, $options: 'i' } });
+                conditions.push({ title: { $regex: escapeRegex(filters.title), $options: 'i' } });
             }
             if (filters.artist) {
-                conditions.push({ artist: { $regex: filters.artist, $options: 'i' } });
+                conditions.push({ artist: { $regex: escapeRegex(filters.artist), $options: 'i' } });
             }
             if (filters.genre) {
-                conditions.push({ genre: { $regex: filters.genre, $options: 'i' } });
+                conditions.push({ genre: { $regex: escapeRegex(filters.genre), $options: 'i' } });
             }
             if (filters.year) {
                 query.year = parseInt(filters.year);
@@ -171,7 +174,7 @@ class MongoService {
 
             // Add filters to query
             if (filters.genre) {
-                query.genre = { $regex: filters.genre, $options: 'i' };
+                query.genre = { $regex: escapeRegex(filters.genre), $options: 'i' };
             }
             if (filters.yearFrom || filters.yearTo) {
                 query.year = {};
@@ -213,4 +216,4 @@ class MongoService {
 // Create a singleton instance
 const mongoService = new MongoService();
 
-module.exports = mongoService; 
+module.exports = mongoService;

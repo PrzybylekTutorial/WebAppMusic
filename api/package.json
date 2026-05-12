@@ -2,6 +2,9 @@
   "name": "webappmusic-api",
   "version": "1.0.0",
   "main": "index.js",
+  "scripts": {
+    "test": "node --test"
+  },
   "dependencies": {
     "axios": "^1.11.0",
     "cors": "^2.8.5",
